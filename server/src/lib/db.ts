@@ -6,8 +6,6 @@ import ws from 'ws'
 // Neon's serverless driver needs a WebSocket implementation in Node.
 neonConfig.webSocketConstructor = ws
 
-const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient }
-
 function createPrisma(): PrismaClient {
   const connectionString = process.env.DATABASE_URL
   if (!connectionString) {
@@ -17,8 +15,15 @@ function createPrisma(): PrismaClient {
   return new PrismaClient({ adapter })
 }
 
-export const prisma: PrismaClient = globalForPrisma.prisma ?? createPrisma()
+// Inicialización perezosa: el servidor puede arrancar (y /health responder)
+// aunque DATABASE_URL no esté presente; solo falla al tocar la DB.
+let instance: PrismaClient | undefined
 
-if (process.env.NODE_ENV !== 'production') {
-  globalForPrisma.prisma = prisma
-}
+export const prisma: PrismaClient = new Proxy({} as PrismaClient, {
+  get(_target, prop) {
+    if (!instance) {
+      instance = createPrisma()
+    }
+    return Reflect.get(instance as object, prop, instance)
+  },
+})
