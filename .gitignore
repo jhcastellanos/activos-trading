@@ -29,3 +29,11 @@ dist-ssr
 .env.*
 !.env.example
 dev-dist
+
+# Vercel
+.vercel
+
+# Prisma / DB locales
+*.db
+*.db-journal
+/prisma/migrations/dev.db

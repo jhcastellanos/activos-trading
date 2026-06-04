@@ -1,0 +1,29 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String        @id @default(cuid())
+  schwabUserKey String        @unique
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  token         SchwabToken?
+}
+
+model SchwabToken {
+  id               String   @id @default(cuid())
+  userId           String   @unique
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessTokenEnc   String
+  refreshTokenEnc  String
+  expiresAt        DateTime
+  refreshExpiresAt DateTime
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}

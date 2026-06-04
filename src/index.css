@@ -239,6 +239,103 @@ select:focus {
   font-size: 0.75rem;
 }
 
+.center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+}
+
+.header-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+/* Login */
+.signin {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.signin-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 28px;
+  max-width: 380px;
+  width: 100%;
+  text-align: center;
+}
+
+.signin-card h1 {
+  margin: 0 0 6px;
+}
+
+.signin-btn {
+  display: inline-block;
+  margin-top: 16px;
+  text-decoration: none;
+  width: 100%;
+}
+
+.signin-note {
+  margin-top: 16px;
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.signin-error {
+  margin-top: 14px;
+  color: var(--neg);
+  font-size: 0.85rem;
+}
+
+.signin-error a {
+  color: var(--accent);
+}
+
+/* Transacciones */
+.tx {
+  background: var(--bg-soft);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 14px;
+  margin-bottom: 18px;
+}
+
+.tx-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.tx-head h2 {
+  font-size: 1rem;
+  margin: 0;
+}
+
+.tx-meta {
+  color: var(--muted);
+  font-size: 0.85rem;
+  margin: 10px 0 0;
+}
+
+.tx-raw {
+  margin-top: 10px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px;
+  font-size: 0.72rem;
+  max-height: 280px;
+  overflow: auto;
+}
+
 @media (max-width: 540px) {
   .summary {
     grid-template-columns: 1fr;
