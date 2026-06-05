@@ -9,7 +9,7 @@
   --muted: #8b98c4;
   --accent: #5b8cff;
   --pos: #2fd778;
-  --warn: #e6c84a;
+  --warn: #ffe135;
   --neg: #ff5d6c;
   --body-gradient: radial-gradient(1200px 600px at 50% -10%, #182350, var(--bg));
   color-scheme: dark;
@@ -25,7 +25,7 @@
   --muted: #5c6b8a;
   --accent: #3d6fd9;
   --pos: #15803d;
-  --warn: #b45309;
+  --warn: #ffc800;
   --neg: #dc2626;
   --body-gradient: linear-gradient(180deg, #e8eef8 0%, var(--bg) 40%);
   color-scheme: light;
@@ -293,6 +293,11 @@ select:focus {
 }
 
 .nav-link {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  min-width: 56px;
   font-size: 0.65rem;
   color: var(--muted);
   text-decoration: none;
@@ -300,9 +305,21 @@ select:focus {
   text-align: center;
 }
 
+.nav-icon {
+  display: block;
+}
+
+.nav-label {
+  line-height: 1.1;
+}
+
 .nav-link.active {
   color: var(--accent);
   font-weight: 600;
+}
+
+.nav-link.active .nav-icon {
+  stroke-width: 2.25;
 }
 
 .badge {
@@ -314,8 +331,8 @@ select:focus {
 }
 
 .badge-demo {
-  background: #3d3520;
-  color: #f0c674;
+  background: color-mix(in srgb, var(--warn) 22%, var(--card));
+  color: var(--warn);
 }
 
 .badge-disconnected {
@@ -600,8 +617,8 @@ select:focus {
 }
 
 .pill-near {
-  background: #3d3520;
-  color: #e6c84a;
+  background: color-mix(in srgb, var(--warn) 22%, var(--card));
+  color: var(--warn);
 }
 
 .pill-far {
@@ -702,26 +719,106 @@ select:focus {
   margin-left: 8px;
 }
 
-/* Plan LIFO */
-.plan-row {
+/* Trades cerrados */
+.closed-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
   display: flex;
-  gap: 12px;
-  align-items: flex-start;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.closed-card {
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: 12px;
   padding: 12px;
-  margin-bottom: 8px;
 }
 
-.plan-row.plan-first {
-  border-color: var(--accent);
+.closed-card.status-met {
+  box-shadow: inset 3px 0 0 var(--pos);
 }
 
-.plan-rank {
+.closed-card.status-pending {
+  box-shadow: inset 3px 0 0 var(--warn);
+}
+
+.closed-card.status-loss {
+  box-shadow: inset 3px 0 0 var(--neg);
+}
+
+.closed-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.closed-symbol {
   font-weight: 700;
+  font-size: 0.95rem;
+}
+
+.closed-executed {
+  font-size: 0.72rem;
   color: var(--muted);
-  min-width: 28px;
+  text-align: right;
+  line-height: 1.3;
+  flex-shrink: 0;
+}
+
+.closed-metrics {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px 16px;
+}
+
+.closed-metric {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.closed-label {
+  font-size: 0.68rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.closed-value {
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+.closed-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.pagination-btn {
+  flex-shrink: 0;
+  padding: 8px 12px;
+  font-size: 0.8rem;
+}
+
+.pagination-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.pagination-meta {
+  font-size: 0.75rem;
+  color: var(--muted);
+  text-align: center;
+  line-height: 1.3;
 }
 
 .plan-detail {

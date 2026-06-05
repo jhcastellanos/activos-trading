@@ -1,14 +1,13 @@
 import { NavLink, Outlet } from 'react-router-dom'
 import { useApp } from './providers/AppProvider'
 import { ConnectionBadge } from '../components/ConnectionBadge'
+import { NavIcon } from '../components/NavIcon'
 
 const nav = [
-  { to: '/', label: 'Inicio' },
-  { to: '/open', label: 'Abiertas' },
-  { to: '/sell-plan', label: 'Plan LIFO' },
-  { to: '/closed', label: 'Cerrados' },
-  { to: '/connect', label: 'Conexión' },
-  { to: '/settings', label: 'Ajustes' },
+  { to: '/', label: 'Inicio', icon: 'home' as const },
+  { to: '/open', label: 'Abiertas', icon: 'open' as const },
+  { to: '/closed', label: 'Cerrados', icon: 'closed' as const },
+  { to: '/settings', label: 'Ajustes', icon: 'settings' as const },
 ]
 
 export function AppShell() {
@@ -35,7 +34,8 @@ export function AppShell() {
             className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}
             end={item.to === '/'}
           >
-            {item.label}
+            <NavIcon name={item.icon} />
+            <span className="nav-label">{item.label}</span>
           </NavLink>
         ))}
       </nav>

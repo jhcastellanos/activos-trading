@@ -119,12 +119,3 @@ export interface SymbolPositionGroup {
   lots: EnrichedLot[]
 }
 
-export interface SellPlanItem {
-  lotId: string
-  symbol: string
-  quantity: number
-  targetSellPrice: number
-  estimatedProfitUsd: number
-  sellPriority: number
-  sellFirst: boolean
-}

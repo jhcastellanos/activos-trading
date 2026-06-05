@@ -1,5 +1,5 @@
 import type { BrokerService } from './interfaces/BrokerService'
-import type { SellPlanItem, SymbolPositionGroup } from '../domain/types'
+import type { SymbolPositionGroup } from '../domain/types'
 import { enrichLots, groupBySymbol } from '../business/portfolio'
 
 export class PortfolioService {
@@ -19,20 +19,5 @@ export class PortfolioService {
   ): SymbolPositionGroup[] {
     const enriched = enrichLots(lots, quotes)
     return groupBySymbol(enriched)
-  }
-
-  async getSellPlan(): Promise<SellPlanItem[]> {
-    const groups = await this.getOpenPositionGroups()
-    return groups.flatMap((g) =>
-      g.lots.map((lot) => ({
-        lotId: lot.id,
-        symbol: lot.symbol,
-        quantity: lot.remainingQty,
-        targetSellPrice: lot.targetSellPrice,
-        estimatedProfitUsd: lot.estimatedProfitUsd,
-        sellPriority: lot.sellPriority,
-        sellFirst: lot.sellFirst,
-      })),
-    )
   }
 }
