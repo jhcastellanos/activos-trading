@@ -11,9 +11,11 @@ import type { ConnectionMode } from '../../domain/types'
 import { DEMO_BYPASS_LOGIN } from '../../business/constants'
 import type { BrokerService } from '../../services/interfaces/BrokerService'
 import { DailyGoalService } from '../../services/DailyGoalService'
+import { DashboardInsightsService } from '../../services/DashboardInsightsService'
 import { MockBrokerService } from '../../services/mock/MockBrokerService'
 import { USMarketCalendarService } from '../../services/market/USMarketCalendarService'
 import { PortfolioService } from '../../services/PortfolioService'
+import { LocalAccountBaselineRepository } from '../../storage/LocalAccountBaselineRepository'
 import { LocalGoalSnapshotRepository } from '../../storage/LocalGoalSnapshotRepository'
 import { fetchSession, type SessionInfo } from '../../schwab/api'
 
@@ -26,6 +28,7 @@ interface AppContextValue {
   broker: BrokerService
   portfolio: PortfolioService
   dailyGoal: DailyGoalService
+  dashboardInsights: DashboardInsightsService
   setDemoMode: () => void
   refreshSession: () => void
 }
@@ -95,6 +98,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
     () => new DailyGoalService(broker, goalSnapshots, calendar),
     [broker, goalSnapshots, calendar],
   )
+  const accountBaselines = useMemo(() => new LocalAccountBaselineRepository(), [])
+  const dashboardInsights = useMemo(
+    () => new DashboardInsightsService(broker, accountBaselines),
+    [broker, accountBaselines],
+  )
 
   const value: AppContextValue = {
     connectionMode,
@@ -103,6 +111,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     broker,
     portfolio,
     dailyGoal,
+    dashboardInsights,
     setDemoMode,
     refreshSession,
   }

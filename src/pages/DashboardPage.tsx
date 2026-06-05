@@ -1,6 +1,10 @@
 import { useEffect, useState } from 'react'
 import { useApp } from '../app/providers/AppProvider'
-import type { AccountGoalEvaluation, AccountSummary } from '../domain/types'
+import type { AccountGoalEvaluation } from '../domain/types'
+import type { DashboardInsights } from '../services/DashboardInsightsService'
+import { AccountGrowthHero } from '../components/AccountGrowthHero'
+import { TradeStreakPanel } from '../components/TradeStreakPanel'
+import { WeeklyPerformancePanel } from '../components/WeeklyPerformancePanel'
 
 const currency = (n: number) =>
   new Intl.NumberFormat('es', { style: 'currency', currency: 'USD' }).format(n)
@@ -27,23 +31,27 @@ const cycleLabels: Record<AccountGoalEvaluation['cycleStatus'], string> = {
 }
 
 export function DashboardPage() {
-  const { broker, dailyGoal } = useApp()
-  const [account, setAccount] = useState<AccountSummary | null>(null)
+  const { dailyGoal, dashboardInsights } = useApp()
   const [goal, setGoal] = useState<AccountGoalEvaluation | null>(null)
+  const [insights, setInsights] = useState<DashboardInsights | null>(null)
 
   useEffect(() => {
-    Promise.all([broker.getAccountSummary(), dailyGoal.evaluateCurrentGoal()]).then(([a, g]) => {
-      setAccount(a)
-      setGoal(g)
-    })
-  }, [broker, dailyGoal])
+    Promise.all([dailyGoal.evaluateCurrentGoal(), dashboardInsights.getInsights()]).then(
+      ([g, i]) => {
+        setGoal(g)
+        setInsights(i)
+      },
+    )
+  }, [dailyGoal, dashboardInsights])
 
-  if (!account || !goal) {
+  if (!goal || !insights) {
     return <p className="empty">Cargando dashboard…</p>
   }
 
   return (
     <section className="dashboard">
+      <AccountGrowthHero growth={insights.yearGrowth} />
+
       <div className={`card account-goal-card status-${goal.goalReached ? 'met' : goal.gainAmount >= 0 ? 'pending' : 'loss'}`}>
         <h2 className="account-goal-title">Objetivo de cuenta 1%</h2>
         <p className={`goal-cycle-badge cycle-${goal.cycleStatus}`}>{cycleLabels[goal.cycleStatus]}</p>
@@ -112,32 +120,9 @@ export function DashboardPage() {
         </div>
       </div>
 
-      <div className="summary">
-        <div className="card">
-          <span className="card-label">Valor total</span>
-          <span className="card-value">{currency(account.totalValue)}</span>
-        </div>
-        <div className={`card ${account.dayChangeUsd >= 0 ? 'pos' : 'neg'}`}>
-          <span className="card-label">Cambio del día</span>
-          <span className="card-value">
-            {currency(account.dayChangeUsd)} ({account.dayChangePct.toFixed(2)}%)
-          </span>
-        </div>
-        <div className="card">
-          <span className="card-label">Posiciones abiertas</span>
-          <span className="card-value">{account.openPositionsCount}</span>
-        </div>
-      </div>
-
-      <div className="summary">
-        <div className="card pos">
-          <span className="card-label">P/L realizado</span>
-          <span className="card-value">{currency(account.realizedPnl)}</span>
-        </div>
-        <div className={`card ${account.unrealizedPnl >= 0 ? 'pos' : 'neg'}`}>
-          <span className="card-label">P/L no realizado</span>
-          <span className="card-value">{currency(account.unrealizedPnl)}</span>
-        </div>
+      <div className="dashboard-insights">
+        <WeeklyPerformancePanel weekly={insights.weekly} />
+        <TradeStreakPanel streak={insights.streak} />
       </div>
     </section>
   )

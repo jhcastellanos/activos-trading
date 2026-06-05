@@ -39,6 +39,14 @@ export interface ClosedTrade {
   notes?: string
 }
 
+/** Balance del primer snapshot del año calendario (cuando empezó el historial ese año). */
+export interface AccountYearBaseline {
+  year: number
+  balance: number
+  /** Fecha del primer registro YYYY-MM-DD (ET). */
+  asOfDate: string
+}
+
 /** Resumen de cuenta (dashboard). */
 export interface AccountSummary {
   totalValue: number

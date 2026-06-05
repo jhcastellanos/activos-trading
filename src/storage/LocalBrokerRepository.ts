@@ -13,6 +13,8 @@ interface StoredData {
   /** @deprecated migrado a goalSnapshots */
   dailyBase?: number
   goalSnapshots: GoalSnapshot[]
+  /** @deprecated ya no se usa; baseline anual sale del primer goalSnapshot del año */
+  yearBaseline?: { year: number; balance: number; asOfDate: string }
 }
 
 function migrateLegacy(data: Partial<StoredData>): GoalSnapshot[] {
@@ -48,7 +50,7 @@ function load(): StoredData {
       return {
         lots: parsed.lots ?? [...MOCK_LOTS],
         closed: parsed.closed ?? [...MOCK_CLOSED],
-        goalSnapshots,
+        goalSnapshots: goalSnapshots.length ? goalSnapshots : [{ ...MOCK_GOAL_SNAPSHOT }],
       }
     }
   } catch {

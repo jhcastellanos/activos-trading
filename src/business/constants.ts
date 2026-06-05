@@ -19,3 +19,6 @@ export const DEFAULT_DAILY_GOAL_PCT = 1
 
 /** Umbral para estado visual "cerca del objetivo" (% restante al target). */
 export const NEAR_TARGET_THRESHOLD_PCT = 0.3
+
+/** Casillas de racha en inicio (2 filas × 7 en móvil). */
+export const STREAK_TILE_COUNT = 14
