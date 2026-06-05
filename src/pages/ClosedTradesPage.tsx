@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useApp } from '../app/providers/AppProvider'
 import type { ClosedTrade } from '../domain/types'
+import { CLOSED_TRADES_PAGE_SIZE } from '../business/constants'
 import { profitVisualStatus } from '../business/profitStatus'
-
-const PAGE_SIZE = 10
+import { ListPagination } from '../components/ListPagination'
+import { usePagination } from '../hooks/usePagination'
 
 const currency = (n: number) =>
   new Intl.NumberFormat('es', { style: 'currency', currency: 'USD' }).format(n)
@@ -32,36 +33,43 @@ function fmtExecutedAt(iso: string): string {
 export function ClosedTradesPage() {
   const { broker } = useApp()
   const [trades, setTrades] = useState<ClosedTrade[]>([])
-  const [page, setPage] = useState(1)
 
   useEffect(() => {
     broker.getClosedTrades().then(setTrades)
   }, [broker])
 
   const sorted = useMemo(() => sortClosedDesc(trades), [trades])
-  const totalPages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE))
+  const { page, setPage, totalPages, pageItems, rangeStart, rangeEnd, showControls } =
+    usePagination(sorted, CLOSED_TRADES_PAGE_SIZE)
 
-  useEffect(() => {
-    setPage((p) => Math.min(Math.max(1, p), totalPages))
-  }, [totalPages])
+  const totals = useMemo(() => {
+    const totalPnlUsd = sorted.reduce((s, t) => s + t.pnlUsd, 0)
+    const invested = sorted.reduce((s, t) => s + t.entryPrice * t.quantity, 0)
+    const totalPnlPct = invested > 0 ? (totalPnlUsd / invested) * 100 : 0
+    return {
+      totalPnlUsd: Math.round(totalPnlUsd * 100) / 100,
+      totalPnlPct: Math.round(totalPnlPct * 100) / 100,
+      count: sorted.length,
+    }
+  }, [sorted])
 
-  const pageItems = useMemo(() => {
-    const start = (page - 1) * PAGE_SIZE
-    return sorted.slice(start, start + PAGE_SIZE)
-  }, [sorted, page])
-
-  const rangeStart = sorted.length === 0 ? 0 : (page - 1) * PAGE_SIZE + 1
-  const rangeEnd = Math.min(page * PAGE_SIZE, sorted.length)
+  const totalStatus = profitVisualStatus(totals.totalPnlPct)
 
   return (
-    <section className="closed-page">
+    <section className="closed-page paginated-page">
       <h2 className="page-title">Trades cerrados</h2>
-      <p className="subtitle">Más reciente primero · {PAGE_SIZE} por página.</p>
+      <p className="subtitle">Más reciente primero · {CLOSED_TRADES_PAGE_SIZE} por página.</p>
 
       {sorted.length === 0 ? (
         <p className="empty">No hay trades cerrados.</p>
       ) : (
         <>
+          <div className={`card closed-total-card status-${totalStatus}`}>
+            <span className="card-label">P/L total ({totals.count} operaciones)</span>
+            <span className={`card-value profit-${totalStatus}`}>{currency(totals.totalPnlUsd)}</span>
+            <span className={`closed-total-pct profit-${totalStatus}`}>{fmtPct(totals.totalPnlPct)}</span>
+          </div>
+
           <ul className="closed-list">
             {pageItems.map((t) => {
               const status = profitVisualStatus(t.pnlPct)
@@ -96,29 +104,17 @@ export function ClosedTradesPage() {
             })}
           </ul>
 
-          {totalPages > 1 && (
-            <nav className="closed-pagination" aria-label="Paginación de trades cerrados">
-              <button
-                type="button"
-                className="btn ghost pagination-btn"
-                disabled={page <= 1}
-                onClick={() => setPage((p) => p - 1)}
-              >
-                Anterior
-              </button>
-              <span className="pagination-meta">
-                {rangeStart}–{rangeEnd} de {sorted.length} · pág. {page}/{totalPages}
-              </span>
-              <button
-                type="button"
-                className="btn ghost pagination-btn"
-                disabled={page >= totalPages}
-                onClick={() => setPage((p) => p + 1)}
-              >
-                Siguiente
-              </button>
-            </nav>
-          )}
+          <ListPagination
+            label="Paginación de trades cerrados"
+            visible={showControls}
+            page={page}
+            totalPages={totalPages}
+            rangeStart={rangeStart}
+            rangeEnd={rangeEnd}
+            total={sorted.length}
+            onPrev={() => setPage((p) => p - 1)}
+            onNext={() => setPage((p) => p + 1)}
+          />
         </>
       )}
     </section>

@@ -1,10 +1,16 @@
 import { useApp } from '../app/providers/AppProvider'
+import { OPEN_SYMBOLS_PAGE_SIZE } from '../business/constants'
+import { ListPagination } from '../components/ListPagination'
 import { SymbolBlock } from '../components/SymbolBlock'
+import { usePagination } from '../hooks/usePagination'
 import { MARKET_PRICE_REFRESH_MS, useLiveOpenPositions } from '../hooks/useLiveOpenPositions'
 
 export function OpenPositionsPage() {
   const { broker, connectionMode } = useApp()
   const { groups, loading, priceUpdatedAt, refreshing, reload } = useLiveOpenPositions(broker)
+
+  const { page, setPage, totalPages, pageItems, rangeStart, rangeEnd, showControls } =
+    usePagination(groups, OPEN_SYMBOLS_PAGE_SIZE)
 
   const handleSellLot = async (lotId: string, symbol: string) => {
     if (broker.mode !== 'demo' || !broker.closeLotPartial) return
@@ -25,11 +31,11 @@ export function OpenPositionsPage() {
       : null
 
   return (
-    <section className="open-page">
+    <section className="open-page paginated-page">
       <h2 className="page-title">Posiciones abiertas</h2>
       <p className="page-hint">
-        Agrupado por activo · cantidad en <strong>contratos</strong> (acciones/unidades, no
-        dólares) · última compra arriba (LIFO).
+        Agrupado por activo · cantidad en <strong>contratos</strong> · {OPEN_SYMBOLS_PAGE_SIZE} activos
+        por página.
       </p>
       <p className={`price-live ${refreshing ? 'price-live-pulse' : ''}`}>
         Precio de mercado: se actualiza cada {MARKET_PRICE_REFRESH_MS / 1000} s
@@ -39,7 +45,7 @@ export function OpenPositionsPage() {
 
       {groups.length === 0 && <p className="empty">No hay posiciones abiertas.</p>}
 
-      {groups.map((g) => (
+      {pageItems.map((g) => (
         <SymbolBlock
           key={g.symbol}
           group={g}
@@ -48,6 +54,18 @@ export function OpenPositionsPage() {
           onSellLot={(id) => handleSellLot(id, g.symbol)}
         />
       ))}
+
+      <ListPagination
+        label="Paginación de posiciones abiertas"
+        visible={showControls}
+        page={page}
+        totalPages={totalPages}
+        rangeStart={rangeStart}
+        rangeEnd={rangeEnd}
+        total={groups.length}
+        onPrev={() => setPage((p) => p - 1)}
+        onNext={() => setPage((p) => p + 1)}
+      />
     </section>
   )
 }

@@ -4,6 +4,10 @@
  */
 export const DEMO_BYPASS_LOGIN = import.meta.env.VITE_DEMO_BYPASS !== 'false'
 
+/** Paginación en listas. */
+export const OPEN_SYMBOLS_PAGE_SIZE = 4
+export const CLOSED_TRADES_PAGE_SIZE = 10
+
 /** Ganancia mínima por lote al vender (regla de negocio). */
 export const DEFAULT_TARGET_PROFIT_PCT = 1.5
 

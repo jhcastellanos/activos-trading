@@ -6,7 +6,7 @@ export const MOCK_ACCOUNT: AccountSummary = {
   dayChangePct: 0.6,
   realizedPnl: 1840.2,
   unrealizedPnl: 920.15,
-  openPositionsCount: 6,
+  openPositionsCount: 8,
   asOf: new Date().toISOString(),
 }
 
@@ -60,12 +60,32 @@ export const MOCK_LOTS: TradeLot[] = [
     avgBuyPrice: 285.0,
     status: 'open',
   },
+  {
+    id: 'lot-meta-1',
+    symbol: 'META',
+    boughtAt: '2026-06-04T09:00:00Z',
+    quantity: 6,
+    remainingQty: 6,
+    avgBuyPrice: 520,
+    status: 'open',
+  },
+  {
+    id: 'lot-amd-1',
+    symbol: 'AMD',
+    boughtAt: '2026-06-04T11:00:00Z',
+    quantity: 10,
+    remainingQty: 10,
+    avgBuyPrice: 118,
+    status: 'open',
+  },
 ]
 
 export const MOCK_QUOTES: Record<string, number> = {
   AAPL: 201.3,
   NVDA: 122.5,
   TSLA: 268.0,
+  META: 528,
+  AMD: 116.5,
 }
 
 export const MOCK_CLOSED: ClosedTrade[] = [

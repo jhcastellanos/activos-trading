@@ -52,7 +52,12 @@ body {
 .app {
   max-width: 720px;
   margin: 0 auto;
-  padding: calc(env(safe-area-inset-top) + 16px) 16px calc(env(safe-area-inset-bottom) + 24px);
+  padding: calc(env(safe-area-inset-top) + 16px) 16px 24px;
+}
+
+/* Con menú fijo: el safe-area va solo en la barra inferior, no debajo del nav */
+.app.shell {
+  padding-bottom: 0;
 }
 
 .header {
@@ -266,17 +271,18 @@ select:focus {
   min-height: 60vh;
 }
 
-/* App shell */
-.shell {
-  padding-bottom: 72px;
-}
-
 .shell-header h1 {
   font-size: 1.25rem;
 }
 
 .shell-main {
   min-height: 50vh;
+  /* Menú inferior + paginación sticky */
+  padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px));
+}
+
+.paginated-page {
+  padding-bottom: 4px;
 }
 
 .bottom-nav {
@@ -288,7 +294,7 @@ select:focus {
   justify-content: space-around;
   background: var(--card);
   border-top: 1px solid var(--border);
-  padding: 8px 4px calc(env(safe-area-inset-bottom) + 8px);
+  padding: 8px 4px max(8px, env(safe-area-inset-bottom, 0px));
   z-index: 50;
 }
 
@@ -720,6 +726,29 @@ select:focus {
 }
 
 /* Trades cerrados */
+.closed-total-card {
+  margin-bottom: 14px;
+}
+
+.closed-total-card.status-met {
+  box-shadow: inset 3px 0 0 var(--pos);
+}
+
+.closed-total-card.status-pending {
+  box-shadow: inset 3px 0 0 var(--warn);
+}
+
+.closed-total-card.status-loss {
+  box-shadow: inset 3px 0 0 var(--neg);
+}
+
+.closed-total-pct {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
 .closed-list {
   list-style: none;
   margin: 0;
@@ -793,14 +822,20 @@ select:focus {
   font-weight: 600;
 }
 
-.closed-pagination {
+.page-pagination {
+  position: sticky;
+  bottom: calc(52px + env(safe-area-inset-bottom, 0px));
+  z-index: 40;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
   margin-top: 16px;
-  padding-top: 12px;
+  padding: 12px 0;
   border-top: 1px solid var(--border);
+  background: color-mix(in srgb, var(--bg) 94%, transparent);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }
 
 .pagination-btn {
