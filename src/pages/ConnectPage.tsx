@@ -1,3 +1,4 @@
+import { DEMO_BYPASS_LOGIN } from '../business/constants'
 import { useApp } from '../app/providers/AppProvider'
 import { loginUrl } from '../schwab/api'
 import { logout } from '../schwab/api'
@@ -5,7 +6,7 @@ import { logout } from '../schwab/api'
 export function ConnectPage() {
   const { connectionMode, session, sessionLoading, setDemoMode, refreshSession } = useApp()
 
-  if (sessionLoading) {
+  if (sessionLoading && !DEMO_BYPASS_LOGIN) {
     return <p className="empty">Verificando sesión…</p>
   }
 
@@ -18,38 +19,44 @@ export function ConnectPage() {
 
       {connectionMode === 'demo' && (
         <div className="card">
-          <p>Estás en <strong>modo Demo</strong> con datos de prueba. Al conectar Schwab, las compras/ventas se importarán desde tu cuenta.</p>
+          <p>
+            Estás en <strong>modo Demo</strong> con datos de prueba.
+            {DEMO_BYPASS_LOGIN
+              ? ' El panel abre directo sin login hasta que actives Schwab en producción.'
+              : ' Al conectar Schwab, las compras/ventas se importarán desde tu cuenta.'}
+          </p>
         </div>
       )}
 
-      {session?.authenticated && connectionMode === 'schwab' ? (
-        <div className="card">
-          <p className="pos">Sesión Schwab activa.</p>
-          {session.schwab?.needsReauth && (
-            <p className="signin-error">
-              La conexión expiró. <a href={loginUrl()}>Reconectar</a>
-            </p>
-          )}
-          <button
-            className="btn ghost"
-            onClick={async () => {
-              await logout()
-              refreshSession()
-            }}
-          >
-            Desconectar Schwab
-          </button>
-        </div>
-      ) : (
-        <>
-          <a className="btn primary signin-btn" href={loginUrl()}>
-            Conectar con Charles Schwab
-          </a>
-          <button className="btn ghost" type="button" onClick={setDemoMode} style={{ marginTop: 12 }}>
-            Continuar en modo Demo (sin Schwab)
-          </button>
-        </>
-      )}
+      {!DEMO_BYPASS_LOGIN &&
+        (session?.authenticated && connectionMode === 'schwab' ? (
+          <div className="card">
+            <p className="pos">Sesión Schwab activa.</p>
+            {session.schwab?.needsReauth && (
+              <p className="signin-error">
+                La conexión expiró. <a href={loginUrl()}>Reconectar</a>
+              </p>
+            )}
+            <button
+              className="btn ghost"
+              onClick={async () => {
+                await logout()
+                refreshSession()
+              }}
+            >
+              Desconectar Schwab
+            </button>
+          </div>
+        ) : (
+          <>
+            <a className="btn primary signin-btn" href={loginUrl()}>
+              Conectar con Charles Schwab
+            </a>
+            <button className="btn ghost" type="button" onClick={setDemoMode} style={{ marginTop: 12 }}>
+              Continuar en modo Demo (sin Schwab)
+            </button>
+          </>
+        ))}
     </section>
   )
 }

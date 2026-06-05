@@ -8,6 +8,7 @@ import {
   type ReactNode,
 } from 'react'
 import type { ConnectionMode } from '../../domain/types'
+import { DEMO_BYPASS_LOGIN } from '../../business/constants'
 import type { BrokerService } from '../../services/interfaces/BrokerService'
 import { MockBrokerService } from '../../services/mock/MockBrokerService'
 import { PortfolioService } from '../../services/PortfolioService'
@@ -28,6 +29,7 @@ interface AppContextValue {
 const AppContext = createContext<AppContextValue | null>(null)
 
 function loadPreferredMode(): ConnectionMode {
+  if (DEMO_BYPASS_LOGIN) return 'demo'
   const stored = localStorage.getItem(MODE_KEY)
   if (stored === 'demo') return 'demo'
   return 'disconnected'
@@ -36,9 +38,14 @@ function loadPreferredMode(): ConnectionMode {
 export function AppProvider({ children }: { children: ReactNode }) {
   const [connectionMode, setConnectionMode] = useState<ConnectionMode>(loadPreferredMode)
   const [session, setSession] = useState<SessionInfo | null>(null)
-  const [sessionLoading, setSessionLoading] = useState(true)
+  const [sessionLoading, setSessionLoading] = useState(!DEMO_BYPASS_LOGIN)
 
   const refreshSession = useCallback(() => {
+    if (DEMO_BYPASS_LOGIN) {
+      setSession(null)
+      setSessionLoading(false)
+      return
+    }
     setSessionLoading(true)
     fetchSession()
       .then((s) => {
@@ -53,6 +60,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [])
 
   useEffect(() => {
+    if (DEMO_BYPASS_LOGIN) {
+      localStorage.setItem(MODE_KEY, 'demo')
+      setConnectionMode('demo')
+      refreshSession()
+      return
+    }
     refreshSession()
   }, [refreshSession])
 
