@@ -87,7 +87,8 @@ npm run prisma:migrate  # crea tablas en Neon (necesita DATABASE_URL)
 ## Notas
 
 - Sin la app de Schwab aprobada, el botón redirige a Schwab pero el login real fallará hasta el estado *Ready For Use*.
-- El portafolio manual (localStorage) sigue disponible; las estadísticas/predicciones sobre datos de Schwab se construirán en una iteración posterior (buen candidato para un worker en Railway).
+- **“Importar”** = sincronizar compras/ventas desde la API de Schwab (ver `docs/SCHWAB_SYNC.md`). CSV/Excel no está en el roadmap actual.
+- En modo Demo se usan datos mock; al conectar Schwab, el sync alimentará lotes LIFO y trades cerrados.
 
 ## Instalar en el teléfono
 

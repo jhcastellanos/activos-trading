@@ -11,6 +11,8 @@
     "preview": "vite preview",
     "start": "tsx server/src/index.ts",
     "lint": "tsc -b --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "typecheck:server": "tsc -p tsconfig.server.json --noEmit",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
@@ -26,6 +28,7 @@
     "iron-session": "^8.0.4",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
+    "react-router-dom": "^6.28.0",
     "tsx": "^4.19.2",
     "ws": "^8.18.0"
   },
@@ -38,6 +41,7 @@
     "prisma": "^6.1.0",
     "typescript": "^5.6.3",
     "vite": "^6.0.3",
-    "vite-plugin-pwa": "^0.21.1"
+    "vite-plugin-pwa": "^0.21.1",
+    "vitest": "^3.0.5"
   }
 }

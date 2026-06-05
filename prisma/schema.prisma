@@ -9,11 +9,15 @@ datasource db {
 }
 
 model User {
-  id            String        @id @default(cuid())
-  schwabUserKey String        @unique
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
+  id            String           @id @default(cuid())
+  schwabUserKey String           @unique
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
   token         SchwabToken?
+  settings      AccountSettings?
+  lots          TradeLot[]
+  closedTrades  ClosedTrade[]
+  dailySnapshots DailySnapshot[]
 }
 
 model SchwabToken {
@@ -26,4 +30,66 @@ model SchwabToken {
   refreshExpiresAt DateTime
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
+}
+
+model AccountSettings {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lotTargetPct    Float    @default(1.5)
+  dailyGoalPct    Float    @default(1)
+  dailyGoalBase   Float    @default(0)
+  updatedAt       DateTime @updatedAt
+}
+
+model TradeLot {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  symbol       String
+  boughtAt     DateTime
+  quantity     Float
+  remainingQty Float
+  avgBuyPrice  Float
+  status       String   // open | partial | closed
+  notes        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([userId, symbol])
+}
+
+model ClosedTrade {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  symbol      String
+  boughtAt    DateTime
+  soldAt      DateTime
+  quantity    Float
+  entryPrice  Float
+  exitPrice   Float
+  pnlUsd      Float
+  pnlPct      Float
+  durationMs  Int
+  closeMethod String
+  notes       String?
+  createdAt   DateTime @default(now())
+
+  @@index([userId, soldAt])
+}
+
+model DailySnapshot {
+  id               String   @id @default(cuid())
+  userId           String
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date             DateTime @db.Date
+  baseBalance      Float
+  goalAmount       Float
+  actualResult     Float
+  dayStatus        String
+  hadOvernightOpen Boolean  @default(false)
+  createdAt        DateTime @default(now())
+
+  @@unique([userId, date])
 }
