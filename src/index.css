@@ -817,9 +817,85 @@ select:focus {
   color: var(--muted);
 }
 
-.goal-card h2 {
+.goal-card h2,
+.account-goal-title {
   font-size: 1rem;
   margin: 0 0 8px;
+}
+
+.account-goal-card {
+  margin-bottom: 14px;
+}
+
+.account-goal-card.status-met {
+  box-shadow: inset 3px 0 0 var(--pos);
+}
+
+.account-goal-card.status-pending {
+  box-shadow: inset 3px 0 0 var(--warn);
+}
+
+.account-goal-card.status-loss {
+  box-shadow: inset 3px 0 0 var(--neg);
+}
+
+.goal-cycle-badge {
+  display: inline-block;
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 6px;
+  margin-bottom: 8px;
+  background: color-mix(in srgb, var(--accent) 15%, var(--card));
+  color: var(--accent);
+}
+
+.goal-metrics {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px 14px;
+}
+
+.goal-metric-label {
+  display: block;
+  font-size: 0.68rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.goal-metric-value {
+  display: block;
+  font-size: 0.95rem;
+  font-weight: 700;
+  margin-top: 2px;
+}
+
+.goal-metric-hint {
+  display: block;
+  font-size: 0.68rem;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.goal-days {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+
+.goal-days-main {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--text);
+  line-height: 1.4;
+}
+
+.goal-days-avg {
+  margin: 6px 0 0;
+  font-size: 0.8rem;
+  color: var(--muted);
+  line-height: 1.4;
 }
 
 .goal-meta {

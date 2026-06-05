@@ -50,21 +50,20 @@ export interface AccountSummary {
   asOf: string
 }
 
-/** Reglas de objetivo diario del 1%. */
+/** @deprecated Usar AccountGoalEvaluation desde DailyGoalService. */
 export interface DailyGoalState {
-  /** Base sobre la que se calcula el 1% (no fluctúa si hay overnight). */
   baseBalance: number
   goalPct: number
   goalAmount: number
   currentProgressUsd: number
   currentProgressPct: number
   targetCloseValue: number
-  /** Si false, no recalcular base por movimiento intradía. */
   canRecalculateBase: boolean
   hadOvernightOpenLots: boolean
-  date: string // YYYY-MM-DD
+  date: string
 }
 
+/** @deprecated Usar GoalSnapshot. */
 export interface DailySnapshot {
   id: string
   date: string
@@ -73,6 +72,55 @@ export interface DailySnapshot {
   actualResult: number
   dayStatus: DayStatus
   hadOvernightOpen: boolean
+}
+
+/** Estado del ciclo del objetivo de cuenta (1%). */
+export type GoalCycleStatus =
+  | 'new_day_cycle'
+  | 'active_cycle'
+  | 'carried_open_positions'
+  | 'goal_reached'
+  | 'non_trading_day'
+  | 'awaiting_position_close'
+
+/** Balance base persistido para el objetivo de cuenta. */
+export interface GoalSnapshot {
+  id: string
+  baseBalance: number
+  projectedBalance: number
+  goalPct: number
+  /** Fecha de operativa ET (YYYY-MM-DD). */
+  tradingDate: string
+  /** Momento de creación (ISO UTC). */
+  createdAt: string
+  /** Hora ET legible HH:mm:ss al crear. */
+  createdTimeEt: string
+  cycleStatus: GoalCycleStatus
+  hadOpenPositionsAtCreation: boolean
+}
+
+/** Resultado procesado para el dashboard — sin lógica en el componente. */
+export interface AccountGoalEvaluation {
+  baseBalance: number
+  baseSnapshotAt: string | null
+  baseSnapshotTimeEt: string | null
+  baseTradingDate: string | null
+  currentBalance: number
+  projectedBalance: number
+  goalPct: number
+  goalAmount: number
+  gainAmount: number
+  gainPercentage: number
+  progressToGoalPct: number
+  calendarDaysSinceBase: number
+  tradingDaysSinceBase: number
+  averageDailyGainPct: number
+  cycleStatus: GoalCycleStatus
+  message: string
+  isTradingDay: boolean
+  hasOpenPositions: boolean
+  snapshotCreated: boolean
+  goalReached: boolean
 }
 
 /** Lote enriquecido para UI (cálculos aplicados). */

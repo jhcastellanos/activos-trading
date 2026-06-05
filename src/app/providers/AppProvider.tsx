@@ -10,8 +10,11 @@ import {
 import type { ConnectionMode } from '../../domain/types'
 import { DEMO_BYPASS_LOGIN } from '../../business/constants'
 import type { BrokerService } from '../../services/interfaces/BrokerService'
+import { DailyGoalService } from '../../services/DailyGoalService'
 import { MockBrokerService } from '../../services/mock/MockBrokerService'
+import { USMarketCalendarService } from '../../services/market/USMarketCalendarService'
 import { PortfolioService } from '../../services/PortfolioService'
+import { LocalGoalSnapshotRepository } from '../../storage/LocalGoalSnapshotRepository'
 import { fetchSession, type SessionInfo } from '../../schwab/api'
 
 const MODE_KEY = 'activos-trading:connection-mode'
@@ -22,6 +25,7 @@ interface AppContextValue {
   sessionLoading: boolean
   broker: BrokerService
   portfolio: PortfolioService
+  dailyGoal: DailyGoalService
   setDemoMode: () => void
   refreshSession: () => void
 }
@@ -85,6 +89,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [connectionMode, session?.authenticated])
 
   const portfolio = useMemo(() => new PortfolioService(broker), [broker])
+  const calendar = useMemo(() => new USMarketCalendarService(), [])
+  const goalSnapshots = useMemo(() => new LocalGoalSnapshotRepository(), [])
+  const dailyGoal = useMemo(
+    () => new DailyGoalService(broker, goalSnapshots, calendar),
+    [broker, goalSnapshots, calendar],
+  )
 
   const value: AppContextValue = {
     connectionMode,
@@ -92,6 +102,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     sessionLoading,
     broker,
     portfolio,
+    dailyGoal,
     setDemoMode,
     refreshSession,
   }

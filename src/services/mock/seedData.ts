@@ -1,4 +1,12 @@
-import type { AccountSummary, ClosedTrade, DailySnapshot, TradeLot } from '../../domain/types'
+import type {
+  AccountSummary,
+  ClosedTrade,
+  DailySnapshot,
+  GoalSnapshot,
+  TradeLot,
+} from '../../domain/types'
+import { DEFAULT_DAILY_GOAL_PCT } from '../../business/constants'
+import { calculateProjectedBalance } from '../../business/goalCalculations'
 
 export const MOCK_ACCOUNT: AccountSummary = {
   totalValue: 52480.5,
@@ -247,11 +255,14 @@ export const MOCK_CLOSED: ClosedTrade[] = [
   },
 ]
 
+export const MOCK_DAILY_BASE = 51000
+
+/** @deprecated solo para migración localStorage antiguo */
 export const MOCK_SNAPSHOTS: DailySnapshot[] = [
   {
     id: 'ds-1',
-    date: '2026-06-03',
-    baseBalance: 51000,
+    date: '2026-06-02',
+    baseBalance: MOCK_DAILY_BASE,
     goalAmount: 510,
     actualResult: 420,
     dayStatus: 'carried_overnight',
@@ -259,4 +270,15 @@ export const MOCK_SNAPSHOTS: DailySnapshot[] = [
   },
 ]
 
-export const MOCK_DAILY_BASE = 51000
+/** Lunes 9:00 a.m. ET — ciclo activo con posiciones abiertas en demo. */
+export const MOCK_GOAL_SNAPSHOT: GoalSnapshot = {
+  id: 'gs-demo-1',
+  baseBalance: MOCK_DAILY_BASE,
+  projectedBalance: calculateProjectedBalance(MOCK_DAILY_BASE, DEFAULT_DAILY_GOAL_PCT),
+  goalPct: DEFAULT_DAILY_GOAL_PCT,
+  tradingDate: '2026-06-02',
+  createdAt: '2026-06-02T13:00:00.000Z',
+  createdTimeEt: '09:00:00',
+  cycleStatus: 'carried_open_positions',
+  hadOpenPositionsAtCreation: true,
+}

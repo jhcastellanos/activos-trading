@@ -1,12 +1,5 @@
 import type { BrokerService } from '../interfaces/BrokerService'
-import type {
-  AccountSummary,
-  ClosedTrade,
-  DailyGoalState,
-  DailySnapshot,
-  TradeLot,
-} from '../../domain/types'
-import { buildDailyGoalState } from '../../business/dailyGoal'
+import type { AccountSummary, ClosedTrade, TradeLot } from '../../domain/types'
 import { localBrokerRepo } from '../../storage/LocalBrokerRepository'
 import { MOCK_ACCOUNT, MOCK_QUOTES } from './seedData'
 
@@ -23,28 +16,24 @@ export class MockBrokerService implements BrokerService {
     }
   }
 
+  async getCurrentAccountValue(): Promise<number> {
+    return MOCK_ACCOUNT.totalValue
+  }
+
+  async getAccountBalance(): Promise<number> {
+    return this.getCurrentAccountValue()
+  }
+
   async getOpenLots(): Promise<TradeLot[]> {
     return localBrokerRepo.get().lots.filter((l) => l.status !== 'closed' && l.remainingQty > 0)
   }
 
+  async getOpenPositions(): Promise<TradeLot[]> {
+    return this.getOpenLots()
+  }
+
   async getClosedTrades(): Promise<ClosedTrade[]> {
     return localBrokerRepo.get().closed
-  }
-
-  async getDailyGoalState(): Promise<DailyGoalState> {
-    const data = localBrokerRepo.get()
-    const lots = await this.getOpenLots()
-    const today = new Date().toISOString().slice(0, 10)
-    return buildDailyGoalState({
-      baseBalance: data.dailyBase,
-      currentAccountValue: MOCK_ACCOUNT.totalValue,
-      openLots: lots,
-      today,
-    })
-  }
-
-  async getDailySnapshots(): Promise<DailySnapshot[]> {
-    return localBrokerRepo.get().snapshots
   }
 
   async getQuotes(symbols: string[]): Promise<Record<string, number>> {
@@ -55,8 +44,7 @@ export class MockBrokerService implements BrokerService {
         out[s] = 0
         continue
       }
-      // Simula mercado en vivo: pequeña variación en cada consulta (demo).
-      const jitterPct = (Math.random() - 0.5) * 0.2 // ±0.1 % aprox.
+      const jitterPct = (Math.random() - 0.5) * 0.2
       out[s] = Math.round(base * (1 + jitterPct / 100) * 100) / 100
     }
     return out
