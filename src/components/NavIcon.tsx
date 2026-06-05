@@ -1,4 +1,4 @@
-type NavIconName = 'home' | 'open' | 'closed' | 'settings'
+type NavIconName = 'home' | 'assets' | 'open' | 'closed' | 'settings'
 
 const paths: Record<NavIconName, JSX.Element> = {
   home: (
@@ -6,12 +6,17 @@ const paths: Record<NavIconName, JSX.Element> = {
       <path d="M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-5v-6H10v6H5a1 1 0 0 1-1-1v-9.5Z" />
     </>
   ),
+  assets: (
+    <>
+      <path d="M3 17 9 11 13 15 21 7" />
+      <path d="M14 7h7v7" />
+    </>
+  ),
   open: (
     <>
-      <path d="M4 19V9" />
-      <path d="M10 19V5" />
-      <path d="M16 19v-4" />
-      <path d="M22 19V3" />
+      <path d="M8 7V6a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v1" />
+      <path d="M4 9h16v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V9Z" />
+      <path d="M4 12h16" />
     </>
   ),
   closed: (

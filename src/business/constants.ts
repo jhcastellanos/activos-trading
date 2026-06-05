@@ -22,3 +22,9 @@ export const NEAR_TARGET_THRESHOLD_PCT = 0.3
 
 /** Casillas de racha en inicio (2 filas × 7 en móvil). */
 export const STREAK_TILE_COUNT = 14
+
+/** Top global (sin filtro de sector). */
+export const SCALPING_TOP_COUNT = 50
+
+/** Top al filtrar por un sector. */
+export const SCALPING_SECTOR_TOP_COUNT = 10

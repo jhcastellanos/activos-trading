@@ -12,7 +12,9 @@ import { DEMO_BYPASS_LOGIN } from '../../business/constants'
 import type { BrokerService } from '../../services/interfaces/BrokerService'
 import { DailyGoalService } from '../../services/DailyGoalService'
 import { DashboardInsightsService } from '../../services/DashboardInsightsService'
+import { MockAssetScreenerService } from '../../services/mock/MockAssetScreenerService'
 import { MockBrokerService } from '../../services/mock/MockBrokerService'
+import type { AssetScreenerService } from '../../services/interfaces/AssetScreenerService'
 import { USMarketCalendarService } from '../../services/market/USMarketCalendarService'
 import { PortfolioService } from '../../services/PortfolioService'
 import { LocalAccountBaselineRepository } from '../../storage/LocalAccountBaselineRepository'
@@ -29,6 +31,7 @@ interface AppContextValue {
   portfolio: PortfolioService
   dailyGoal: DailyGoalService
   dashboardInsights: DashboardInsightsService
+  assetScreener: AssetScreenerService
   setDemoMode: () => void
   refreshSession: () => void
 }
@@ -103,6 +106,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     () => new DashboardInsightsService(broker, accountBaselines),
     [broker, accountBaselines],
   )
+  const assetScreener = useMemo(() => new MockAssetScreenerService(), [])
 
   const value: AppContextValue = {
     connectionMode,
@@ -112,6 +116,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     portfolio,
     dailyGoal,
     dashboardInsights,
+    assetScreener,
     setDemoMode,
     refreshSession,
   }

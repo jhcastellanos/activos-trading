@@ -318,8 +318,8 @@ select:focus {
   flex-direction: column;
   align-items: center;
   gap: 3px;
-  min-width: 56px;
-  font-size: 0.65rem;
+  min-width: 48px;
+  font-size: 0.6rem;
   color: var(--muted);
   text-decoration: none;
   padding: 4px 6px;
@@ -1174,6 +1174,346 @@ select:focus {
   background: color-mix(in srgb, var(--neg) 18%, var(--card));
   border-color: color-mix(in srgb, var(--neg) 45%, var(--border));
   color: var(--neg);
+}
+
+/* Screener scalping — activos */
+.scalp-page {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-bottom: 8px;
+}
+
+.scalp-intro {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.scalp-sector-chips {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  width: 100%;
+}
+
+@media (min-width: 420px) {
+  .scalp-sector-chips {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.scalp-sector-chip,
+.scalp-sector-badge {
+  --sector-color: var(--accent);
+}
+
+.scalp-sector-chip.sector-all {
+  --sector-color: #64748b;
+}
+
+.scalp-sector-chip.sector-ia,
+.scalp-sector-badge.sector-ia {
+  --sector-color: #8b5cf6;
+}
+
+.scalp-sector-chip.sector-semiconductores,
+.scalp-sector-badge.sector-semiconductores {
+  --sector-color: #3b82f6;
+}
+
+.scalp-sector-chip.sector-energia_nuclear,
+.scalp-sector-badge.sector-energia_nuclear {
+  --sector-color: #f59e0b;
+}
+
+.scalp-sector-chip.sector-defensa,
+.scalp-sector-badge.sector-defensa {
+  --sector-color: #64748b;
+}
+
+.scalp-sector-chip.sector-data_centers,
+.scalp-sector-badge.sector-data_centers {
+  --sector-color: #06b6d4;
+}
+
+.scalp-sector-chip.sector-robotica,
+.scalp-sector-badge.sector-robotica {
+  --sector-color: #14b8a6;
+}
+
+.scalp-sector-chip.sector-tierras_raras,
+.scalp-sector-badge.sector-tierras_raras {
+  --sector-color: #d97706;
+}
+
+.scalp-sector-chip.sector-tecnologicas,
+.scalp-sector-badge.sector-tecnologicas {
+  --sector-color: #6366f1;
+}
+
+.scalp-sector-chip {
+  width: 100%;
+  min-width: 0;
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--sector-color) 28%, var(--border));
+  background: color-mix(in srgb, var(--sector-color) 12%, var(--card));
+  color: color-mix(in srgb, var(--sector-color) 72%, var(--text));
+  cursor: pointer;
+  font-family: inherit;
+  line-height: 1.25;
+  text-align: center;
+  white-space: normal;
+  word-break: break-word;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.scalp-sector-chip:hover {
+  border-color: color-mix(in srgb, var(--sector-color) 45%, var(--border));
+  background: color-mix(in srgb, var(--sector-color) 18%, var(--card));
+}
+
+.scalp-sector-chip.active {
+  background: color-mix(in srgb, var(--sector-color) 32%, var(--card));
+  border-color: var(--sector-color);
+  color: var(--sector-color);
+  font-weight: 700;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--sector-color) 25%, transparent);
+}
+
+.scalp-sector-badge {
+  margin-left: auto;
+  font-size: 0.58rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--sector-color) 12%, var(--card));
+  color: color-mix(in srgb, var(--sector-color) 80%, var(--text));
+  border: 1px solid color-mix(in srgb, var(--sector-color) 28%, var(--border));
+  text-align: center;
+  line-height: 1.2;
+  white-space: normal;
+}
+
+.scalp-disclaimer {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--warn) 40%, var(--border));
+  background: color-mix(in srgb, var(--warn) 10%, var(--card));
+  font-size: 0.75rem;
+  line-height: 1.45;
+  color: var(--text);
+}
+
+.scalp-section-title {
+  margin: 8px 0 0;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+}
+
+.scalp-section-hint {
+  margin: 0 0 6px;
+  font-size: 0.72rem;
+  color: var(--muted);
+  line-height: 1.35;
+}
+
+.scalp-asset-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.scalp-asset-row {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px 12px;
+}
+
+.scalp-asset-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 6px 8px;
+  margin-bottom: 8px;
+}
+
+.scalp-rank {
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: var(--accent);
+  min-width: 1.6rem;
+}
+
+.scalp-symbol-block {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.scalp-symbol {
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.scalp-name {
+  font-size: 0.68rem;
+  color: var(--muted);
+}
+
+.scalp-trade-as {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: var(--bg-soft);
+  border: 1px solid var(--border);
+}
+
+.scalp-trade-label {
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  margin-right: 2px;
+}
+
+.scalp-trade-pick {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+}
+
+.scalp-trade-badge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+}
+
+.scalp-trade-issuer {
+  font-size: 0.58rem;
+  color: var(--muted);
+  padding-left: 2px;
+}
+
+.scalp-trade-mult {
+  font-size: 0.62rem;
+  font-weight: 800;
+  opacity: 0.9;
+}
+
+.scalp-trade-x2 {
+  background: color-mix(in srgb, var(--tier-blue) 16%, var(--card));
+  color: var(--tier-blue);
+  border-color: color-mix(in srgb, var(--tier-blue) 40%, var(--border));
+}
+
+.scalp-trade-x3 {
+  background: color-mix(in srgb, var(--warn) 16%, var(--card));
+  color: var(--warn);
+  border-color: color-mix(in srgb, var(--warn) 40%, var(--border));
+}
+
+.scalp-trade-inverse {
+  font-size: 0.62rem;
+  color: var(--muted);
+  padding: 2px 0;
+  align-self: center;
+}
+
+.scalp-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+
+.scalp-metric {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.scalp-metric-primary .scalp-metric-value {
+  color: var(--pos);
+  font-size: 1rem;
+}
+
+.scalp-metric-label {
+  font-size: 0.6rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
+.scalp-metric-value {
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.scalp-metric-sub {
+  font-size: 0.62rem;
+  color: var(--muted);
+  line-height: 1.25;
+}
+
+.scalp-turnover-badge {
+  display: inline-block;
+  font-size: 0.62rem;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 5px;
+  width: fit-content;
+}
+
+.turnover-normal {
+  background: color-mix(in srgb, var(--muted) 15%, var(--card));
+  color: var(--muted);
+}
+
+.turnover-active {
+  background: color-mix(in srgb, var(--tier-blue) 18%, var(--card));
+  color: var(--tier-blue);
+}
+
+.turnover-very-active {
+  background: color-mix(in srgb, var(--pos) 18%, var(--card));
+  color: var(--pos);
+}
+
+.turnover-extreme {
+  background: color-mix(in srgb, var(--warn) 22%, var(--card));
+  color: var(--warn);
+}
+
+.scalp-nav-signal {
+  color: var(--pos);
+  font-weight: 600;
+}
+
+.scalp-nav-neutral {
+  color: var(--muted);
 }
 
 .connect-page .signin-btn {

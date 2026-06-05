@@ -166,6 +166,48 @@ export interface SymbolAggregate {
   lotsPending: number
 }
 
+/** Nivel de rotación / liquidez diaria del activo. */
+export type TurnoverTier = 'normal' | 'active' | 'very_active' | 'extreme'
+
+/** Emisor de ETF apalancado — orden de preferencia al recomendar. */
+export type LeveragedIssuer = 'direxion' | 'graniteshares' | 'defiance' | 'other'
+
+/** Sectores con tendencia para el screener de scalping. */
+export type ScalpingSector =
+  | 'ia'
+  | 'semiconductores'
+  | 'energia_nuclear'
+  | 'defensa'
+  | 'data_centers'
+  | 'robotica'
+  | 'tierras_raras'
+  | 'tecnologicas'
+
+/** Activo principal — métricas del subyacente; operativa vía un ETF bull único. */
+export interface AssetScalpingProfile {
+  symbol: string
+  name: string
+  sector: ScalpingSector
+  /** ETF apalancado para operar (único por universo). */
+  tradeBull: string
+  tradeLeverage: 2 | 3
+  tradeBullIssuer: LeveragedIssuer
+  tradeInverse?: string
+  price: number
+  nav: number
+  avgDailyRangePct: number
+  turnoverPct: number
+}
+
+export interface RankedScalpingAsset extends AssetScalpingProfile {
+  rank: number
+  turnoverTier: TurnoverTier
+  /** Positivo = precio bajo NAV. */
+  navDiscountPct: number
+  priceBelowNav: boolean
+  juiceScore: number
+}
+
 export interface SymbolPositionGroup {
   symbol: string
   currentPrice: number
