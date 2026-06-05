@@ -22,13 +22,9 @@ function contractLabel(remaining: number, bought: number): string {
 export function SymbolBlock({
   group,
   priceUpdatedAt,
-  onSellLot,
-  showDemoSell,
 }: {
   group: SymbolPositionGroup
   priceUpdatedAt?: Date | null
-  onSellLot?: (lotId: string) => void
-  showDemoSell?: boolean
 }) {
   const { aggregate: agg } = group
   const aggStatus = profitVisualStatus(agg.currentProfitPct)
@@ -72,19 +68,14 @@ export function SymbolBlock({
 
       <div className="symbol-lots-head">
         <span>Por compra</span>
-        <span className="symbol-lots-hint">orden LIFO</span>
       </div>
 
       <ol className="lot-list">
         {group.lots.map((lot) => {
           const lotStatus = profitVisualStatus(lot.currentProfitPct)
           return (
-            <li
-              key={lot.id}
-              className={`lot-row status-${lotStatus} ${lot.sellFirst ? 'lot-first' : ''}`}
-            >
+            <li key={lot.id} className={`lot-row status-${lotStatus}`}>
               <div className="lot-line">
-                <span className="lot-rank">{lot.sellPriority}</span>
                 <div className="lot-main">
                   <div className="lot-title-row">
                     <strong>{contractLabel(lot.remainingQty, lot.quantity)}</strong>
@@ -96,16 +87,6 @@ export function SymbolBlock({
                   </p>
                 </div>
               </div>
-              {(lot.sellFirst || (showDemoSell && onSellLot)) && (
-                <div className="lot-actions">
-                  {lot.sellFirst && <span className="lot-badge">Vender primero</span>}
-                  {showDemoSell && onSellLot && (
-                    <button type="button" className="lot-sell-link" onClick={() => onSellLot(lot.id)}>
-                      Vender
-                    </button>
-                  )}
-                </div>
-              )}
             </li>
           )
         })}

@@ -58,6 +58,9 @@ body {
 /* Con menú fijo: el safe-area va solo en la barra inferior, no debajo del nav */
 .app.shell {
   padding-bottom: 0;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
 }
 
 .header {
@@ -276,12 +279,22 @@ select:focus {
 }
 
 .shell-main {
-  min-height: 50vh;
-  /* Menú inferior + paginación sticky */
-  padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px));
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  padding-bottom: calc(56px + env(safe-area-inset-bottom, 0px));
+}
+
+.shell-page {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
 }
 
 .paginated-page {
+  flex: 1 1 auto;
   padding-bottom: 4px;
 }
 
@@ -455,13 +468,6 @@ select:focus {
   color: var(--muted);
 }
 
-.symbol-lots-hint {
-  font-weight: 500;
-  text-transform: none;
-  letter-spacing: 0;
-  font-size: 0.7rem;
-  opacity: 0.85;
-}
 
 /* Ganancia: verde / amarillo / rojo */
 .profit-met {
@@ -643,27 +649,15 @@ select:focus {
   border-top: 1px solid var(--border);
 }
 
-.lot-row.lot-first {
-  background: color-mix(in srgb, var(--accent) 6%, transparent);
-}
-
 .lot-line {
   display: flex;
-  gap: 10px;
   align-items: flex-start;
-}
-
-.lot-rank {
-  font-weight: 600;
-  color: var(--muted);
-  font-size: 0.85rem;
-  min-width: 16px;
-  padding-top: 2px;
 }
 
 .lot-main {
   flex: 1;
   min-width: 0;
+  width: 100%;
 }
 
 .lot-title-row {
@@ -685,45 +679,6 @@ select:focus {
   line-height: 1.35;
 }
 
-.lot-actions {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-top: 6px;
-  margin-left: 26px;
-}
-
-.lot-ok {
-  color: var(--pos);
-  font-weight: 600;
-  font-size: 0.75rem;
-}
-
-.lot-pending {
-  color: var(--muted);
-  font-size: 0.75rem;
-}
-
-.lot-badge {
-  color: var(--accent);
-  font-weight: 600;
-  font-size: 0.7rem;
-}
-
-.lot-sell-link {
-  background: none;
-  border: none;
-  color: var(--accent);
-  font-size: 0.75rem;
-  cursor: pointer;
-  padding: 0;
-  text-decoration: underline;
-}
-
-.lot-flag.inline {
-  display: inline;
-  margin-left: 8px;
-}
 
 /* Trades cerrados */
 .closed-total-card {

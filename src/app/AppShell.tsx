@@ -23,7 +23,9 @@ export function AppShell() {
       </header>
 
       <main className="shell-main">
-        <Outlet />
+        <div className="shell-page">
+          <Outlet />
+        </div>
       </main>
 
       <nav className="bottom-nav" aria-label="Navegación principal">

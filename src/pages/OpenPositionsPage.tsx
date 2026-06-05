@@ -7,19 +7,10 @@ import { MARKET_PRICE_REFRESH_MS, useLiveOpenPositions } from '../hooks/useLiveO
 
 export function OpenPositionsPage() {
   const { broker, connectionMode } = useApp()
-  const { groups, loading, priceUpdatedAt, refreshing, reload } = useLiveOpenPositions(broker)
+  const { groups, loading, priceUpdatedAt, refreshing } = useLiveOpenPositions(broker)
 
   const { page, setPage, totalPages, pageItems, rangeStart, rangeEnd, showControls } =
     usePagination(groups, OPEN_SYMBOLS_PAGE_SIZE)
-
-  const handleSellLot = async (lotId: string, symbol: string) => {
-    if (broker.mode !== 'demo' || !broker.closeLotPartial) return
-    const priceStr = prompt(`Precio de venta ${symbol}:`)
-    const qtyStr = prompt('Cantidad de contratos a vender:')
-    if (!priceStr || !qtyStr) return
-    await broker.closeLotPartial(lotId, parseFloat(qtyStr), parseFloat(priceStr))
-    reload()
-  }
 
   if (loading && groups.length === 0) {
     return <p className="empty">Cargando posiciones…</p>
@@ -46,13 +37,7 @@ export function OpenPositionsPage() {
       {groups.length === 0 && <p className="empty">No hay posiciones abiertas.</p>}
 
       {pageItems.map((g) => (
-        <SymbolBlock
-          key={g.symbol}
-          group={g}
-          priceUpdatedAt={priceUpdatedAt}
-          showDemoSell={broker.mode === 'demo'}
-          onSellLot={(id) => handleSellLot(id, g.symbol)}
-        />
+        <SymbolBlock key={g.symbol} group={g} priceUpdatedAt={priceUpdatedAt} />
       ))}
 
       <ListPagination
