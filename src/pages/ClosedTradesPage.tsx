@@ -58,7 +58,6 @@ export function ClosedTradesPage() {
   return (
     <section className="closed-page paginated-page">
       <h2 className="page-title">Trades cerrados</h2>
-      <p className="subtitle">Más reciente primero · {CLOSED_TRADES_PAGE_SIZE} por página.</p>
 
       {sorted.length === 0 ? (
         <p className="empty">No hay trades cerrados.</p>
