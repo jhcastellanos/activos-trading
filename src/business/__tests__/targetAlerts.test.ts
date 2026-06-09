@@ -10,6 +10,7 @@ type LotSpec = {
   id: string
   targetState: 'far' | 'near' | 'reached'
   boughtAt: string
+  remainingQty?: number
   sellPriority?: number
   sellFirst?: boolean
 }
@@ -18,7 +19,7 @@ function group(symbol: string, lots: LotSpec[]): SymbolPositionGroup {
   return {
     symbol,
     currentPrice: 100,
-    totalRemainingQty: lots.length * 10,
+    totalRemainingQty: lots.reduce((s, l) => s + (l.remainingQty ?? 10), 0),
     totalInvestedUsd: 1000,
     aggregate: {
       totalCostUsd: 1000,
@@ -36,8 +37,8 @@ function group(symbol: string, lots: LotSpec[]): SymbolPositionGroup {
       id: l.id,
       symbol,
       boughtAt: l.boughtAt,
-      quantity: 10,
-      remainingQty: 10,
+      quantity: l.remainingQty ?? 10,
+      remainingQty: l.remainingQty ?? 10,
       avgBuyPrice: 100,
       status: 'open' as const,
       investedUsd: 1000,
@@ -57,87 +58,89 @@ function group(symbol: string, lots: LotSpec[]): SymbolPositionGroup {
 }
 
 describe('targetAlerts', () => {
-  it('mensaje última compra (LIFO #1 por fecha)', () => {
+  it('mensaje: cantidad de contratos antes que la fecha', () => {
     const msg = buildSingleLotMessage('AAPL', {
       sellPriority: 1,
       sellFirst: true,
       boughtAt: '2026-06-04T10:00:00Z',
+      remainingQty: 10,
     })
-    expect(msg.body).toContain('Última compra')
+    expect(msg.title).toMatch(/10 contratos ·/)
+    expect(msg.body).toMatch(/10 contratos ·/)
+    expect(msg.body.indexOf('10 contratos')).toBeLessThan(msg.body.indexOf('jun'))
     expect(msg.body).toContain('vender primero')
-    expect(msg.body).toContain('LIFO')
   })
 
-  it('mensaje compra anterior con fecha', () => {
+  it('compra anterior: contratos antes que fecha en título y cuerpo', () => {
     const msg = buildSingleLotMessage('AAPL', {
       sellPriority: 2,
       sellFirst: false,
-      boughtAt: '2026-06-01T10:00:00Z',
+      boughtAt: '2026-06-02T10:00:00Z',
+      remainingQty: 15,
     })
-    expect(msg.body).toContain('Compra del')
+    expect(msg.title).toContain('15 contratos ·')
+    expect(msg.title).not.toContain('compra del')
+    expect(msg.body).toContain('15 contratos ·')
     expect(msg.body).toContain('LIFO #2')
   })
 
-  it('ordena avisos por fecha de compra: la más reciente primero', () => {
-    const prev = [
-      group('TQQQ', [
-        { id: 'old', targetState: 'near', boughtAt: '2026-06-01T10:00:00Z' },
-        { id: 'new', targetState: 'near', boughtAt: '2026-06-04T10:00:00Z' },
+  it('notifica lote que ya está en objetivo (sin cruce previo)', () => {
+    const groups = [
+      group('AAPL', [
+        {
+          id: 'lot-aapl-1',
+          targetState: 'reached',
+          boughtAt: '2026-06-04T10:00:00Z',
+          remainingQty: 10,
+          sellPriority: 1,
+          sellFirst: true,
+        },
       ]),
     ]
-    const next = [
-      group('TQQQ', [
-        { id: 'old', targetState: 'reached', boughtAt: '2026-06-01T10:00:00Z' },
-        { id: 'new', targetState: 'reached', boughtAt: '2026-06-04T10:00:00Z' },
-      ]),
-    ]
-    const alerts = analyzeTargetAlerts(prev, next, new Set()).filter((a) => a.kind === 'single_lot')
-    expect(alerts[0].lotId).toBe('new')
-    expect(alerts[0].sellFirst).toBe(true)
-    expect(alerts[1].lotId).toBe('old')
-  })
-
-  it('cruce parcial: solo el lote que cruzó, priorizando última compra', () => {
-    const prev = [
-      group('TQQQ', [
-        { id: 'new', targetState: 'near', boughtAt: '2026-06-04T10:00:00Z' },
-        { id: 'old', targetState: 'far', boughtAt: '2026-06-01T10:00:00Z' },
-      ]),
-    ]
-    const next = [
-      group('TQQQ', [
-        { id: 'new', targetState: 'reached', boughtAt: '2026-06-04T10:00:00Z' },
-        { id: 'old', targetState: 'far', boughtAt: '2026-06-01T10:00:00Z' },
-      ]),
-    ]
-    const alerts = analyzeTargetAlerts(prev, next, new Set())
+    const alerts = analyzeTargetAlerts(groups, new Set())
     expect(alerts).toHaveLength(1)
-    expect(alerts[0].lotId).toBe('new')
-    expect(alerts[0].body).toContain('Última compra')
+    expect(alerts[0].lotId).toBe('lot-aapl-1')
+    expect(alerts[0].body).toContain('10 contratos ·')
+    expect(alerts[0].body).toContain('1,5%')
   })
 
-  it('no repite alerta si el lote está en cooldown', () => {
-    const prev = [group('AAPL', [{ id: 'a1', targetState: 'near', boughtAt: '2026-06-04T10:00:00Z' }])]
-    const next = [group('AAPL', [{ id: 'a1', targetState: 'reached', boughtAt: '2026-06-04T10:00:00Z' }])]
-    const alerts = analyzeTargetAlerts(prev, next, new Set(['a1']))
+  it('no notifica lote en cooldown', () => {
+    const groups = [
+      group('AAPL', [{ id: 'a1', targetState: 'reached', boughtAt: '2026-06-04T10:00:00Z' }]),
+    ]
+    const alerts = analyzeTargetAlerts(groups, new Set(['a1']))
     expect(alerts).toHaveLength(0)
   })
 
-  it('no repite resumen de activo si summary está en cooldown', () => {
-    const prev = [
+  it('ordena por LIFO y notifica varios lotes en objetivo', () => {
+    const groups = [
       group('TQQQ', [
-        { id: 't1', targetState: 'near', boughtAt: '2026-06-04T10:00:00Z' },
-        { id: 't2', targetState: 'reached', boughtAt: '2026-06-01T10:00:00Z' },
+        {
+          id: 'new',
+          targetState: 'reached',
+          boughtAt: '2026-06-04T10:00:00Z',
+          sellPriority: 1,
+          sellFirst: true,
+        },
+        { id: 'old', targetState: 'reached', boughtAt: '2026-06-01T10:00:00Z', sellPriority: 2 },
       ]),
     ]
-    const next = [
+    const alerts = analyzeTargetAlerts(groups, new Set())
+    const lotAlerts = alerts.filter((a) => a.kind === 'single_lot')
+    expect(lotAlerts).toHaveLength(2)
+    expect(lotAlerts[0].lotId).toBe('new')
+    expect(alerts.some((a) => a.kind === 'all_contracts')).toBe(true)
+  })
+
+  it('no repite resumen de activo si summary está en cooldown', () => {
+    const groups = [
       group('TQQQ', [
         { id: 't1', targetState: 'reached', boughtAt: '2026-06-04T10:00:00Z' },
         { id: 't2', targetState: 'reached', boughtAt: '2026-06-01T10:00:00Z' },
       ]),
     ]
-    const alerts = analyzeTargetAlerts(prev, next, new Set(['summary-TQQQ']))
-    expect(alerts.every((a) => a.kind !== 'all_contracts')).toBe(true)
+    const alerts = analyzeTargetAlerts(groups, new Set(['summary-TQQQ', 't1', 't2']))
+    expect(alerts).toHaveLength(0)
   })
 
   it('resumen cuando todos los lotes quedan en objetivo', () => {

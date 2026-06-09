@@ -1,6 +1,6 @@
-import type { SymbolPositionGroup } from '../../domain/types'
 import type { TargetAlertPayload } from '../../business/targetAlerts'
 import { dispatchTargetAlertShown, notifyTargetAlertsChanged } from './alertEvents'
+import { appendTodayAlertLog } from './targetAlertLog'
 
 const ENABLED_KEY = 'activos-trading:target-alerts-enabled'
 const COOLDOWN_KEY = 'activos-trading:target-alerts-cooldown'
@@ -78,17 +78,6 @@ export function markNotificationCooldown(key: string, now = Date.now()): void {
   saveCooldownMap(map)
 }
 
-/** Marca lotes ya en objetivo al activar alertas para no spamear al encender. */
-export function primeAlertBaseline(groups: SymbolPositionGroup[], now = Date.now()): void {
-  const map = pruneExpiredCooldowns(loadCooldownMap(), now)
-  for (const group of groups) {
-    for (const lot of group.lots) {
-      if (lot.targetState === 'reached') map[lot.id] = now
-    }
-  }
-  saveCooldownMap(map)
-}
-
 export function getNotificationPermission(): NotificationPermission | 'unsupported' {
   if (typeof window === 'undefined' || !('Notification' in window)) return 'unsupported'
   return Notification.permission
@@ -156,6 +145,7 @@ export async function showTargetAlertNotifications(alerts: TargetAlertPayload[])
     }
 
     dispatchTargetAlertShown(alert)
+    appendTodayAlertLog(alert)
     vibrateDevice()
     markNotificationCooldown(alert.lotId)
   }

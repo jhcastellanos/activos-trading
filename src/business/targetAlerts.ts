@@ -29,25 +29,34 @@ export function formatLotBoughtAt(iso: string): string {
   })
 }
 
+export function formatContractsLabel(qty: number): string {
+  return `${qty} ${qty === 1 ? 'contrato' : 'contratos'}`
+}
+
+/** Cantidad de contratos primero, luego fecha de compra. */
+export function formatContractsAndDate(qty: number, boughtAt: string): string {
+  return `${formatContractsLabel(qty)} · ${formatLotBoughtAt(boughtAt)}`
+}
+
 /** Un lote concreto; LIFO #1 = compra más reciente (mayor fecha). */
 export function buildSingleLotMessage(
   symbol: string,
-  lot: Pick<EnrichedLot, 'sellPriority' | 'sellFirst' | 'boughtAt'>,
+  lot: Pick<EnrichedLot, 'sellPriority' | 'sellFirst' | 'boughtAt' | 'remainingQty'>,
 ): Pick<TargetAlertPayload, 'title' | 'body' | 'kind'> {
-  const fecha = formatLotBoughtAt(lot.boughtAt)
+  const contractsDate = formatContractsAndDate(lot.remainingQty, lot.boughtAt)
 
   if (lot.sellFirst) {
     return {
       kind: 'single_lot',
-      title: `${symbol} · última compra`,
-      body: `${symbol} · Última compra (${fecha}) supera 1,5% de objetivo de venta — vender primero (LIFO)`,
+      title: `${symbol} · ${contractsDate}`,
+      body: `${symbol} · ${contractsDate} superan 1,5% de objetivo — vender primero (LIFO)`,
     }
   }
 
   return {
     kind: 'single_lot',
-    title: `${symbol} · compra ${fecha}`,
-    body: `${symbol} · Compra del ${fecha} supera 1,5% de objetivo de venta (LIFO #${lot.sellPriority})`,
+    title: `${symbol} · ${contractsDate}`,
+    body: `${symbol} · ${contractsDate} superan 1,5% de objetivo (LIFO #${lot.sellPriority})`,
   }
 }
 
@@ -64,16 +73,6 @@ export function buildAllContractsMessage(
   }
 }
 
-function lotReachedMap(groups: SymbolPositionGroup[]): Map<string, boolean> {
-  const map = new Map<string, boolean>()
-  for (const group of groups) {
-    for (const lot of group.lots) {
-      map.set(lot.id, lot.targetState === 'reached')
-    }
-  }
-  return map
-}
-
 /** Lotes abiertos del activo, orden LIFO por fecha de compra (más reciente primero). */
 function openLotsLifo(group: SymbolPositionGroup): EnrichedLot[] {
   const open = group.lots.filter((l) => l.remainingQty > 0 && l.status !== 'closed')
@@ -81,43 +80,28 @@ function openLotsLifo(group: SymbolPositionGroup): EnrichedLot[] {
 }
 
 /**
- * Detecta lotes que acaban de cruzar el 1,5% — un aviso por lote, en orden LIFO (última compra primero).
- * Si todos los lotes del activo quedan en objetivo, agrega un resumen final.
+ * Detecta lotes que están en objetivo 1,5% y no están en cooldown.
+ * Incluye lotes que ya estaban en verde (no solo al cruzar el umbral).
  */
 export function analyzeTargetAlerts(
-  previousGroups: SymbolPositionGroup[],
-  nextGroups: SymbolPositionGroup[],
+  groups: SymbolPositionGroup[],
   cooldownKeys: ReadonlySet<string>,
 ): TargetAlertPayload[] {
-  const prevReached = lotReachedMap(previousGroups)
   const alerts: TargetAlertPayload[] = []
 
-  for (const group of nextGroups) {
+  for (const group of groups) {
     const openLots = openLotsLifo(group)
     if (openLots.length === 0) continue
 
-    const newlyReached = openLots.filter(
-      (lot) =>
-        lot.targetState === 'reached' &&
-        !prevReached.get(lot.id) &&
-        !cooldownKeys.has(lot.id),
-    )
-    if (newlyReached.length === 0) continue
+    const lotsAtTarget = openLots.filter((l) => l.targetState === 'reached')
+    const lotsToNotify = lotsAtTarget.filter((lot) => !cooldownKeys.has(lot.id))
+    if (lotsToNotify.length === 0) continue
 
-    const lotsAtTarget = openLots.filter((l) => l.targetState === 'reached').length
     const totalLots = openLots.length
-    const allAtTarget = lotsAtTarget === totalLots
+    const allAtTarget = lotsAtTarget.length === totalLots
 
-    // Un aviso por cada lote que acaba de cruzar, en orden LIFO (última fecha de compra primero).
-    for (const lot of newlyReached) {
-      const message =
-        totalLots === 1
-          ? {
-              kind: 'all_contracts' as const,
-              title: `${group.symbol} · objetivo 1,5%`,
-              body: `Activo ${group.symbol} supera 1,5% de objetivo de venta`,
-            }
-          : buildSingleLotMessage(group.symbol, lot)
+    for (const lot of lotsToNotify) {
+      const message = buildSingleLotMessage(group.symbol, lot)
 
       alerts.push({
         symbol: group.symbol,
@@ -125,7 +109,7 @@ export function analyzeTargetAlerts(
         sellPriority: lot.sellPriority,
         sellFirst: lot.sellFirst,
         boughtAt: lot.boughtAt,
-        lotsAtTarget,
+        lotsAtTarget: lotsAtTarget.length,
         totalLots,
         newlyReachedLotIds: [lot.id],
         ...message,
@@ -141,9 +125,9 @@ export function analyzeTargetAlerts(
         sellPriority: 0,
         sellFirst: false,
         boughtAt: openLots[0]?.boughtAt ?? '',
-        lotsAtTarget,
+        lotsAtTarget: lotsAtTarget.length,
         totalLots,
-        newlyReachedLotIds: newlyReached.map((l) => l.id),
+        newlyReachedLotIds: lotsToNotify.map((l) => l.id),
         ...summary,
       })
     }

@@ -55,7 +55,8 @@ export function TargetAlertsSettings() {
         Vigila precios cada 5 s en cualquier pantalla (Inicio, Abiertas, etc.) y avisa cuando un lote
         supera su venta mínima al 1,5%. En demo los precios oscilan para que puedas probar las alertas.
         Muestra notificación del sistema y banner en pantalla aunque la app esté abierta.
-        La misma alerta (por lote o activo) no se repite antes de 5 minutos.
+        Avisa también lotes que ya están en verde (≥1,5%). La misma alerta no se repite antes de 5 minutos.
+        Revisa el historial en «Notificaciones de hoy» (se limpia cada día).
       </p>
 
       <p className="settings-meta">
@@ -78,10 +79,10 @@ export function TargetAlertsSettings() {
       {enabled && (
         <ul className="legend-list" style={{ marginTop: '1rem' }}>
           <li>
-            <strong>Última compra (LIFO):</strong> «X · Última compra (fecha) supera 1,5% — vender primero»
+            <strong>Última compra (LIFO):</strong> «AAPL · 10 contratos · 4 jun 2026 superan 1,5% — vender primero»
           </li>
           <li>
-            <strong>Compra anterior:</strong> «X · Compra del (fecha) supera 1,5% (LIFO #2)»
+            <strong>Compra anterior:</strong> «AAPL · 15 contratos · 2 jun 2026 superan 1,5% (LIFO #2)»
           </li>
           <li>
             <strong>Todos los lotes:</strong> resumen cuando cada contrato del activo está en objetivo
