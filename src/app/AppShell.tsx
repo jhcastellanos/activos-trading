@@ -2,6 +2,8 @@ import { NavLink, Outlet } from 'react-router-dom'
 import { useApp } from './providers/AppProvider'
 import { ConnectionBadge } from '../components/ConnectionBadge'
 import { NavIcon } from '../components/NavIcon'
+import { TargetAlertToast } from '../components/TargetAlertToast'
+import { useTargetPriceAlertWatcher } from '../hooks/useTargetPriceAlertWatcher'
 
 const nav = [
   { to: '/', label: 'Inicio', icon: 'home' as const },
@@ -12,10 +14,12 @@ const nav = [
 ]
 
 export function AppShell() {
-  const { connectionMode } = useApp()
+  const { connectionMode, broker } = useApp()
+  useTargetPriceAlertWatcher(broker)
 
   return (
     <div className="app shell">
+      <TargetAlertToast />
       <header className="header shell-header">
         <div>
           <h1>Activos Trading</h1>

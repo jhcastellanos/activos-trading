@@ -1,4 +1,6 @@
+import type { SymbolPositionGroup } from '../../domain/types'
 import type { TargetAlertPayload } from '../../business/targetAlerts'
+import { dispatchTargetAlertShown, notifyTargetAlertsChanged } from './alertEvents'
 
 const ENABLED_KEY = 'activos-trading:target-alerts-enabled'
 const NOTIFIED_LOTS_KEY = 'activos-trading:target-alerts-notified-lots'
@@ -14,9 +16,18 @@ export function areTargetAlertsEnabled(): boolean {
 export function setTargetAlertsEnabled(enabled: boolean): void {
   try {
     localStorage.setItem(ENABLED_KEY, enabled ? '1' : '0')
+    notifyTargetAlertsChanged()
   } catch {
     // ignore
   }
+}
+
+/** Marca lotes ya en objetivo al activar alertas para no spamear al encender. */
+export function primeAlertBaseline(groups: SymbolPositionGroup[]): void {
+  const reached = groups.flatMap((g) =>
+    g.lots.filter((l) => l.targetState === 'reached').map((l) => l.id),
+  )
+  if (reached.length > 0) markLotsNotified(reached)
 }
 
 export function loadNotifiedLotIds(): Set<string> {
@@ -74,6 +85,14 @@ async function getServiceWorkerRegistration(): Promise<ServiceWorkerRegistration
   }
 }
 
+function vibrateDevice() {
+  try {
+    navigator.vibrate?.([180, 80, 180])
+  } catch {
+    // ignore
+  }
+}
+
 export async function showTargetAlertNotifications(alerts: TargetAlertPayload[]): Promise<void> {
   if (!alerts.length || !areTargetAlertsEnabled()) return
   if (getNotificationPermission() !== 'granted') return
@@ -89,15 +108,29 @@ export async function showTargetAlertNotifications(alerts: TargetAlertPayload[])
       data: { url: '/open', symbol: alert.symbol },
     }
 
+    let pushed = false
+
     try {
       if (registration?.showNotification) {
         await registration.showNotification(alert.title, options)
-      } else {
-        new Notification(alert.title, options)
+        pushed = true
       }
-      markLotsNotified(alert.newlyReachedLotIds)
     } catch (err) {
-      console.error('Target alert notification failed:', err)
+      console.warn('SW notification failed, trying fallback:', err)
     }
+
+    if (!pushed) {
+      try {
+        new Notification(alert.title, options)
+        pushed = true
+      } catch (err) {
+        console.warn('Notification API fallback failed:', err)
+      }
+    }
+
+    // Siempre aviso en pantalla (app abierta en primer plano).
+    dispatchTargetAlertShown(alert)
+    vibrateDevice()
+    markLotsNotified(alert.newlyReachedLotIds)
   }
 }

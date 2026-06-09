@@ -3,6 +3,24 @@ import type { AccountSummary, ClosedTrade, TradeLot } from '../../domain/types'
 import { localBrokerRepo } from '../../storage/LocalBrokerRepository'
 import { MOCK_ACCOUNT, MOCK_QUOTES } from './seedData'
 
+/** Precio simulado por símbolo: random walk para cruzar objetivos 1,5% en demo. */
+const demoQuoteState = new Map<string, number>()
+
+function nextDemoQuote(symbol: string): number {
+  const base = MOCK_QUOTES[symbol]
+  if (base == null) return 0
+
+  let price = demoQuoteState.get(symbol) ?? base
+  // Paso aleatorio ±1,2% por tick — suficiente para cruzar umbrales con el refresco cada 5s.
+  const stepPct = (Math.random() - 0.5) * 2.4
+  price = price * (1 + stepPct / 100)
+  // Ligera reversión al precio base para que oscile alrededor del mercado mock.
+  price += (base - price) * 0.08
+  price = Math.round(price * 100) / 100
+  demoQuoteState.set(symbol, price)
+  return price
+}
+
 export class MockBrokerService implements BrokerService {
   readonly mode = 'demo' as const
 
@@ -39,13 +57,7 @@ export class MockBrokerService implements BrokerService {
   async getQuotes(symbols: string[]): Promise<Record<string, number>> {
     const out: Record<string, number> = {}
     for (const s of symbols) {
-      const base = MOCK_QUOTES[s]
-      if (base == null) {
-        out[s] = 0
-        continue
-      }
-      const jitterPct = (Math.random() - 0.5) * 0.2
-      out[s] = Math.round(base * (1 + jitterPct / 100) * 100) / 100
+      out[s] = nextDemoQuote(s)
     }
     return out
   }

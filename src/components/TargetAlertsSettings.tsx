@@ -52,8 +52,9 @@ export function TargetAlertsSettings() {
     <div className="card settings-card">
       <h3 className="settings-heading">Alertas de objetivo 1,5%</h3>
       <p className="subtitle">
-        Al refrescar precios, avisa cuando un contrato abierto supera su precio mínimo de venta (1,5%).
-        Funciona con la app instalada o en segundo plano.
+        Vigila precios cada 5 s en cualquier pantalla (Inicio, Abiertas, etc.) y avisa cuando un lote
+        supera su venta mínima al 1,5%. En demo los precios oscilan para que puedas probar las alertas.
+        Muestra notificación del sistema y banner en pantalla aunque la app esté abierta.
       </p>
 
       <p className="settings-meta">
