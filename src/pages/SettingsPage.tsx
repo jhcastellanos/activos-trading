@@ -1,5 +1,6 @@
 import { useApp } from '../app/providers/AppProvider'
 import { useTheme } from '../app/providers/ThemeProvider'
+import { TargetAlertsSettings } from '../components/TargetAlertsSettings'
 import { localBrokerRepo } from '../storage/LocalBrokerRepository'
 
 export function SettingsPage() {
@@ -30,6 +31,8 @@ export function SettingsPage() {
           </button>
         </div>
       </div>
+
+      <TargetAlertsSettings />
 
       <div className="card settings-card">
         <h3 className="settings-heading">Colores de ganancia</h3>

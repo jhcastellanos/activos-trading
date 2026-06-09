@@ -1,5 +1,5 @@
 import type { EnrichedLot, SymbolAggregate, SymbolPositionGroup, TradeLot } from '../domain/types'
-import { assignSellPriority } from './lifo'
+import { assignSellPriority, sortLotsLifo } from './lifo'
 import {
   currentProfitPct,
   distanceToTarget,
@@ -16,7 +16,16 @@ export function enrichLots(
   profitPct = DEFAULT_TARGET_PROFIT_PCT,
 ): EnrichedLot[] {
   const openLots = lots.filter((l) => l.status !== 'closed' && l.remainingQty > 0)
-  const withPriority = assignSellPriority(openLots)
+
+  // LIFO por activo: la compra más reciente (mayor boughtAt) es prioridad 1.
+  const bySymbol = new Map<string, TradeLot[]>()
+  for (const lot of openLots) {
+    const list = bySymbol.get(lot.symbol) ?? []
+    list.push(lot)
+    bySymbol.set(lot.symbol, list)
+  }
+
+  const withPriority = [...bySymbol.values()].flatMap((symbolLots) => assignSellPriority(symbolLots))
 
   return withPriority.map((lot) => {
     const currentPrice = pricesBySymbol[lot.symbol] ?? lot.avgBuyPrice
@@ -76,7 +85,7 @@ export function groupBySymbol(enriched: EnrichedLot[]): SymbolPositionGroup[] {
   }
   return [...map.entries()]
     .map(([symbol, lots]) => {
-      const sorted = [...lots].sort((a, b) => a.sellPriority - b.sellPriority)
+      const sorted = sortLotsLifo(lots)
       const currentPrice = sorted[0]?.currentPrice ?? 0
       const totalRemainingQty = sorted.reduce((s, l) => s + l.remainingQty, 0)
       const totalInvestedUsd = roundUsd(sorted.reduce((s, l) => s + l.investedUsd, 0))
