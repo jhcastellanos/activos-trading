@@ -3,7 +3,6 @@ import {
   analyzeTargetAlerts,
   buildAllContractsMessage,
   buildSingleLotMessage,
-  lotIdsNoLongerAtTarget,
 } from '../targetAlerts'
 import type { SymbolPositionGroup } from '../../domain/types'
 
