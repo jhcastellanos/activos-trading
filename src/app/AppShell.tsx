@@ -9,6 +9,7 @@ const nav = [
   { to: '/', label: 'Inicio', icon: 'home' as const },
   { to: '/open', label: 'Abiertas', icon: 'open' as const },
   { to: '/closed', label: 'Cerrados', icon: 'closed' as const },
+  { to: '/notifications', label: 'Notificaciones', icon: 'notifications' as const },
   { to: '/assets', label: 'Activos', icon: 'assets' as const },
   { to: '/settings', label: 'Ajustes', icon: 'settings' as const },
 ]

@@ -4,6 +4,7 @@ import { DashboardPage } from '../pages/DashboardPage'
 import { OpenPositionsPage } from '../pages/OpenPositionsPage'
 import { ClosedTradesPage } from '../pages/ClosedTradesPage'
 import { ScalpingAssetsPage } from '../pages/ScalpingAssetsPage'
+import { NotificationsPage } from '../pages/NotificationsPage'
 import { SettingsPage } from '../pages/SettingsPage'
 import { PlaceholderPage } from '../pages/PlaceholderPage'
 
@@ -16,6 +17,7 @@ export function AppRoutes() {
         <Route path="sell-plan" element={<Navigate to="/closed" replace />} />
         <Route path="closed" element={<ClosedTradesPage />} />
         <Route path="assets" element={<ScalpingAssetsPage />} />
+        <Route path="notifications" element={<NotificationsPage />} />
         <Route path="connect" element={<Navigate to="/settings" replace />} />
         <Route path="settings" element={<SettingsPage />} />
         <Route

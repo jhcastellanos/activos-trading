@@ -1,7 +1,7 @@
 /* eslint-disable no-restricted-globals */
 self.addEventListener('notificationclick', (event) => {
   event.notification.close()
-  const targetUrl = event.notification.data?.url || '/open'
+  const targetUrl = event.notification.data?.url || '/notifications'
   const url = new URL(targetUrl, self.location.origin).href
 
   event.waitUntil(

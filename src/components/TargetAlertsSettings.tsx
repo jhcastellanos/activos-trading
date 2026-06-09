@@ -56,7 +56,7 @@ export function TargetAlertsSettings() {
         supera su venta mínima al 1,5%. En demo los precios oscilan para que puedas probar las alertas.
         Muestra notificación del sistema y banner en pantalla aunque la app esté abierta.
         Avisa también lotes que ya están en verde (≥1,5%). La misma alerta no se repite antes de 5 minutos.
-        Revisa el historial en «Notificaciones de hoy» (se limpia cada día).
+        Revisa el historial en la sección <strong>Notificaciones</strong> (se limpia cada día).
       </p>
 
       <p className="settings-meta">

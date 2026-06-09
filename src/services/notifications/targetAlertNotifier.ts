@@ -121,7 +121,7 @@ export async function showTargetAlertNotifications(alerts: TargetAlertPayload[])
       tag: `target-alert-${alert.lotId}`,
       icon: '/pwa-192x192.png',
       badge: '/pwa-192x192.png',
-      data: { url: '/open', symbol: alert.symbol },
+      data: { url: '/notifications', symbol: alert.symbol },
     }
 
     let pushed = false
