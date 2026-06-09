@@ -3,7 +3,12 @@ import type { TargetAlertPayload } from '../../business/targetAlerts'
 import { dispatchTargetAlertShown, notifyTargetAlertsChanged } from './alertEvents'
 
 const ENABLED_KEY = 'activos-trading:target-alerts-enabled'
-const NOTIFIED_LOTS_KEY = 'activos-trading:target-alerts-notified-lots'
+const COOLDOWN_KEY = 'activos-trading:target-alerts-cooldown'
+
+/** Mismo aviso (lote u activo) no se repite antes de 5 minutos. */
+export const TARGET_ALERT_COOLDOWN_MS = 5 * 60 * 1000
+
+type CooldownMap = Record<string, number>
 
 export function areTargetAlertsEnabled(): boolean {
   try {
@@ -22,46 +27,66 @@ export function setTargetAlertsEnabled(enabled: boolean): void {
   }
 }
 
-/** Marca lotes ya en objetivo al activar alertas para no spamear al encender. */
-export function primeAlertBaseline(groups: SymbolPositionGroup[]): void {
-  const reached = groups.flatMap((g) =>
-    g.lots.filter((l) => l.targetState === 'reached').map((l) => l.id),
-  )
-  if (reached.length > 0) markLotsNotified(reached)
-}
-
-export function loadNotifiedLotIds(): Set<string> {
+function loadCooldownMap(): CooldownMap {
   try {
-    const raw = localStorage.getItem(NOTIFIED_LOTS_KEY)
-    if (!raw) return new Set()
+    const raw = localStorage.getItem(COOLDOWN_KEY)
+    if (!raw) return {}
     const parsed = JSON.parse(raw) as unknown
-    if (!Array.isArray(parsed)) return new Set()
-    return new Set(parsed.filter((id): id is string => typeof id === 'string'))
+    if (Array.isArray(parsed)) return {}
+    if (typeof parsed === 'object' && parsed !== null) {
+      return parsed as CooldownMap
+    }
+    return {}
   } catch {
-    return new Set()
+    return {}
   }
 }
 
-export function saveNotifiedLotIds(ids: Set<string>): void {
+function saveCooldownMap(map: CooldownMap): void {
   try {
-    localStorage.setItem(NOTIFIED_LOTS_KEY, JSON.stringify([...ids]))
+    localStorage.setItem(COOLDOWN_KEY, JSON.stringify(map))
   } catch {
     // ignore
   }
 }
 
-/** Quita del registro los lotes que ya no están en objetivo (para poder re-alertar si vuelven a cruzar). */
-export function pruneNotifiedLotIds(noLongerAtTarget: Set<string>): void {
-  if (noLongerAtTarget.size === 0) return
-  const current = loadNotifiedLotIds()
-  const next = new Set([...current].filter((id) => !noLongerAtTarget.has(id)))
-  saveNotifiedLotIds(next)
+function pruneExpiredCooldowns(map: CooldownMap, now = Date.now()): CooldownMap {
+  const next: CooldownMap = {}
+  for (const [key, ts] of Object.entries(map)) {
+    if (now - ts < TARGET_ALERT_COOLDOWN_MS) next[key] = ts
+  }
+  return next
 }
 
-export function markLotsNotified(lotIds: string[]): void {
-  const next = loadNotifiedLotIds()
-  for (const id of lotIds) next.add(id)
-  saveNotifiedLotIds(next)
+/** Claves (lote o resumen de activo) que aún están en ventana de 5 minutos. */
+export function getActiveCooldownKeys(): Set<string> {
+  const pruned = pruneExpiredCooldowns(loadCooldownMap())
+  saveCooldownMap(pruned)
+  return new Set(Object.keys(pruned))
+}
+
+export function isNotificationInCooldown(key: string, now = Date.now()): boolean {
+  const map = loadCooldownMap()
+  const ts = map[key]
+  if (ts == null) return false
+  return now - ts < TARGET_ALERT_COOLDOWN_MS
+}
+
+export function markNotificationCooldown(key: string, now = Date.now()): void {
+  const map = pruneExpiredCooldowns(loadCooldownMap(), now)
+  map[key] = now
+  saveCooldownMap(map)
+}
+
+/** Marca lotes ya en objetivo al activar alertas para no spamear al encender. */
+export function primeAlertBaseline(groups: SymbolPositionGroup[], now = Date.now()): void {
+  const map = pruneExpiredCooldowns(loadCooldownMap(), now)
+  for (const group of groups) {
+    for (const lot of group.lots) {
+      if (lot.targetState === 'reached') map[lot.id] = now
+    }
+  }
+  saveCooldownMap(map)
 }
 
 export function getNotificationPermission(): NotificationPermission | 'unsupported' {
@@ -100,6 +125,8 @@ export async function showTargetAlertNotifications(alerts: TargetAlertPayload[])
   const registration = await getServiceWorkerRegistration()
 
   for (const alert of alerts) {
+    if (isNotificationInCooldown(alert.lotId)) continue
+
     const options: NotificationOptions = {
       body: alert.body,
       tag: `target-alert-${alert.lotId}`,
@@ -128,9 +155,8 @@ export async function showTargetAlertNotifications(alerts: TargetAlertPayload[])
       }
     }
 
-    // Siempre aviso en pantalla (app abierta en primer plano).
     dispatchTargetAlertShown(alert)
     vibrateDevice()
-    markLotsNotified(alert.newlyReachedLotIds)
+    markNotificationCooldown(alert.lotId)
   }
 }

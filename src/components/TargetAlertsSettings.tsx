@@ -55,6 +55,7 @@ export function TargetAlertsSettings() {
         Vigila precios cada 5 s en cualquier pantalla (Inicio, Abiertas, etc.) y avisa cuando un lote
         supera su venta mínima al 1,5%. En demo los precios oscilan para que puedas probar las alertas.
         Muestra notificación del sistema y banner en pantalla aunque la app esté abierta.
+        La misma alerta (por lote o activo) no se repite antes de 5 minutos.
       </p>
 
       <p className="settings-meta">

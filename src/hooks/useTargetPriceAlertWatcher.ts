@@ -1,14 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { analyzeTargetAlerts, lotIdsNoLongerAtTarget } from '../business/targetAlerts'
+import { analyzeTargetAlerts } from '../business/targetAlerts'
 import type { SymbolPositionGroup } from '../domain/types'
 import type { BrokerService } from '../services/interfaces/BrokerService'
 import { PortfolioService } from '../services/PortfolioService'
 import { TARGET_ALERTS_CHANGED } from '../services/notifications/alertEvents'
 import {
   areTargetAlertsEnabled,
-  loadNotifiedLotIds,
+  getActiveCooldownKeys,
   primeAlertBaseline,
-  pruneNotifiedLotIds,
   showTargetAlertNotifications,
 } from '../services/notifications/targetAlertNotifier'
 import { MARKET_PRICE_REFRESH_MS } from './useLiveOpenPositions'
@@ -38,8 +37,7 @@ export function useTargetPriceAlertWatcher(broker: BrokerService) {
       const previous = previousRef.current
 
       if (previous) {
-        pruneNotifiedLotIds(lotIdsNoLongerAtTarget(next))
-        const alerts = analyzeTargetAlerts(previous, next, loadNotifiedLotIds())
+        const alerts = analyzeTargetAlerts(previous, next, getActiveCooldownKeys())
         await showTargetAlertNotifications(alerts)
       }
 

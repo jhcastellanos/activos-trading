@@ -117,23 +117,28 @@ describe('targetAlerts', () => {
     expect(alerts[0].body).toContain('Última compra')
   })
 
-  it('no repite alerta si el lote ya fue notificado', () => {
-    const prev = [group('AAPL', [{ id: 'a1', targetState: 'reached', boughtAt: '2026-06-04T10:00:00Z' }])]
+  it('no repite alerta si el lote está en cooldown', () => {
+    const prev = [group('AAPL', [{ id: 'a1', targetState: 'near', boughtAt: '2026-06-04T10:00:00Z' }])]
     const next = [group('AAPL', [{ id: 'a1', targetState: 'reached', boughtAt: '2026-06-04T10:00:00Z' }])]
     const alerts = analyzeTargetAlerts(prev, next, new Set(['a1']))
     expect(alerts).toHaveLength(0)
   })
 
-  it('lotIdsNoLongerAtTarget devuelve lotes que bajaron del objetivo', () => {
-    const groups = [
-      group('AAPL', [
-        { id: 'a1', targetState: 'reached', boughtAt: '2026-06-04T10:00:00Z' },
-        { id: 'a2', targetState: 'far', boughtAt: '2026-06-01T10:00:00Z' },
+  it('no repite resumen de activo si summary está en cooldown', () => {
+    const prev = [
+      group('TQQQ', [
+        { id: 't1', targetState: 'near', boughtAt: '2026-06-04T10:00:00Z' },
+        { id: 't2', targetState: 'reached', boughtAt: '2026-06-01T10:00:00Z' },
       ]),
     ]
-    const dropped = lotIdsNoLongerAtTarget(groups)
-    expect(dropped.has('a2')).toBe(true)
-    expect(dropped.has('a1')).toBe(false)
+    const next = [
+      group('TQQQ', [
+        { id: 't1', targetState: 'reached', boughtAt: '2026-06-04T10:00:00Z' },
+        { id: 't2', targetState: 'reached', boughtAt: '2026-06-01T10:00:00Z' },
+      ]),
+    ]
+    const alerts = analyzeTargetAlerts(prev, next, new Set(['summary-TQQQ']))
+    expect(alerts.every((a) => a.kind !== 'all_contracts')).toBe(true)
   })
 
   it('resumen cuando todos los lotes quedan en objetivo', () => {

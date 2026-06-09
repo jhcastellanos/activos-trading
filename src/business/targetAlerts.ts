@@ -87,7 +87,7 @@ function openLotsLifo(group: SymbolPositionGroup): EnrichedLot[] {
 export function analyzeTargetAlerts(
   previousGroups: SymbolPositionGroup[],
   nextGroups: SymbolPositionGroup[],
-  alreadyNotifiedLotIds: ReadonlySet<string>,
+  cooldownKeys: ReadonlySet<string>,
 ): TargetAlertPayload[] {
   const prevReached = lotReachedMap(previousGroups)
   const alerts: TargetAlertPayload[] = []
@@ -100,7 +100,7 @@ export function analyzeTargetAlerts(
       (lot) =>
         lot.targetState === 'reached' &&
         !prevReached.get(lot.id) &&
-        !alreadyNotifiedLotIds.has(lot.id),
+        !cooldownKeys.has(lot.id),
     )
     if (newlyReached.length === 0) continue
 
@@ -132,11 +132,12 @@ export function analyzeTargetAlerts(
       })
     }
 
-    if (allAtTarget && totalLots > 1) {
+    const summaryKey = `summary-${group.symbol}`
+    if (allAtTarget && totalLots > 1 && !cooldownKeys.has(summaryKey)) {
       const summary = buildAllContractsMessage(group.symbol, totalLots)
       alerts.push({
         symbol: group.symbol,
-        lotId: `summary-${group.symbol}`,
+        lotId: summaryKey,
         sellPriority: 0,
         sellFirst: false,
         boughtAt: openLots[0]?.boughtAt ?? '',
@@ -149,15 +150,4 @@ export function analyzeTargetAlerts(
   }
 
   return alerts
-}
-
-/** Lotes que dejaron de estar en objetivo — se quitan del registro de avisos enviados. */
-export function lotIdsNoLongerAtTarget(groups: SymbolPositionGroup[]): Set<string> {
-  const ids = new Set<string>()
-  for (const group of groups) {
-    for (const lot of group.lots) {
-      if (lot.targetState !== 'reached') ids.add(lot.id)
-    }
-  }
-  return ids
 }
