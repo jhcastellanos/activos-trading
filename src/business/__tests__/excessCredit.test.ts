@@ -25,10 +25,6 @@ function closed(overrides: Partial<ClosedTrade>): ClosedTrade {
   }
 }
 
-const openLotsAfterJune15 = new Map([
-  ['AAPL', [{ boughtAt: '2026-06-15T10:00:00Z' }]],
-])
-
 describe('excessCredit', () => {
   it('excedente por contrato cuando la venta supera el 1,5% planificado', () => {
     // 50.01 × 1.015 = 50.76 → (53 − 50.76) × 80 ≈ 179.20
