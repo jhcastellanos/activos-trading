@@ -32,6 +32,9 @@ function group(symbol: string, lots: LotSpec[]): SymbolPositionGroup {
       targetState: 'far',
       lotsAtTarget: lots.filter((l) => l.targetState === 'reached').length,
       lotsPending: lots.filter((l) => l.targetState !== 'reached').length,
+      excessCreditUsd: 0,
+      breakevenSellPrice: 100,
+      excessCoversOpen: false,
     },
     lots: lots.map((l, i) => ({
       id: l.id,

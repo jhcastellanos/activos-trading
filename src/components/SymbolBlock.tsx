@@ -64,6 +64,24 @@ export function SymbolBlock({
           <span className="basis-label">Venta mín.</span>
           <span className={`basis-value profit-${aggStatus}`}>{currency(agg.targetSellPrice)}</span>
         </div>
+        {agg.excessCreditUsd > 0 && (
+          <>
+            <div className="basis-item">
+              <span className="basis-label">Excedente 1,5%</span>
+              <span className="basis-value profit-met">{currency(agg.excessCreditUsd)}</span>
+            </div>
+            <div className="basis-item">
+              <span className="basis-label">Venta even</span>
+              <span className="basis-value">
+                {agg.excessCoversOpen
+                  ? 'Cubierto'
+                  : agg.breakevenSellPrice != null
+                    ? currency(agg.breakevenSellPrice)
+                    : '—'}
+              </span>
+            </div>
+          </>
+        )}
       </div>
 
       <div className="symbol-lots-head">

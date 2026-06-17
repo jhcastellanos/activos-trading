@@ -164,6 +164,12 @@ export interface SymbolAggregate {
   targetState: LotTargetState
   lotsAtTarget: number
   lotsPending: number
+  /** Excedente de cierres del símbolo por encima del 1,5% (crédito para even). */
+  excessCreditUsd: number
+  /** Precio de venta por contrato para salir en even usando el excedente. */
+  breakevenSellPrice: number | null
+  /** El excedente ya cubre el costo de lo abierto. */
+  excessCoversOpen: boolean
 }
 
 /** Nivel de rotación / liquidez diaria del activo. */

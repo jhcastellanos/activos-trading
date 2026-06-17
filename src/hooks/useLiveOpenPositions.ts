@@ -18,10 +18,13 @@ export function useLiveOpenPositions(broker: BrokerService) {
       if (!opts.silent) setLoading(true)
       else setRefreshing(true)
       try {
-        const lots = await broker.getOpenLots()
+        const [lots, closed] = await Promise.all([
+          broker.getOpenLots(),
+          broker.getClosedTrades(),
+        ])
         const symbols = [...new Set(lots.map((l) => l.symbol))]
         const quotes = symbols.length ? await broker.getQuotes(symbols) : {}
-        const next = await portfolio.getOpenPositionGroupsFrom(lots, quotes)
+        const next = portfolio.getOpenPositionGroupsFrom(lots, quotes, closed)
         setGroups(next)
         setPriceUpdatedAt(new Date())
       } finally {

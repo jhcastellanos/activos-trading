@@ -1,23 +1,26 @@
 import type { BrokerService } from './interfaces/BrokerService'
-import type { SymbolPositionGroup } from '../domain/types'
-import { enrichLots, groupBySymbol } from '../business/portfolio'
+import type { ClosedTrade, SymbolPositionGroup, TradeLot } from '../domain/types'
+import { groupOpenPositions } from '../business/portfolio'
 
 export class PortfolioService {
   constructor(private readonly broker: BrokerService) {}
 
   async getOpenPositionGroups(): Promise<SymbolPositionGroup[]> {
-    const lots = await this.broker.getOpenLots()
+    const [lots, closed] = await Promise.all([
+      this.broker.getOpenLots(),
+      this.broker.getClosedTrades(),
+    ])
     const symbols = [...new Set(lots.map((l) => l.symbol))]
     const quotes = symbols.length ? await this.broker.getQuotes(symbols) : {}
-    return this.getOpenPositionGroupsFrom(lots, quotes)
+    return this.getOpenPositionGroupsFrom(lots, quotes, closed)
   }
 
-  /** Permite reutilizar lotes y cotizaciones ya obtenidas (refresco de precio). */
+  /** Permite reutilizar lotes, cotizaciones y cierres ya obtenidos (refresco de precio). */
   getOpenPositionGroupsFrom(
-    lots: Awaited<ReturnType<BrokerService['getOpenLots']>>,
+    lots: TradeLot[],
     quotes: Record<string, number>,
+    closedTrades: ClosedTrade[] = [],
   ): SymbolPositionGroup[] {
-    const enriched = enrichLots(lots, quotes)
-    return groupBySymbol(enriched)
+    return groupOpenPositions(lots, quotes, closedTrades)
   }
 }

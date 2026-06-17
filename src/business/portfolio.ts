@@ -1,4 +1,5 @@
-import type { EnrichedLot, SymbolAggregate, SymbolPositionGroup, TradeLot } from '../domain/types'
+import type { ClosedTrade, EnrichedLot, SymbolAggregate, SymbolPositionGroup, TradeLot } from '../domain/types'
+import { breakevenSellPriceWithExcess, excessCreditBySymbol } from './excessCredit'
 import { assignSellPriority, sortLotsLifo } from './lifo'
 import {
   currentProfitPct,
@@ -56,11 +57,17 @@ export function enrichLots(
 export function buildSymbolAggregate(
   lots: EnrichedLot[],
   profitPct = DEFAULT_TARGET_PROFIT_PCT,
+  excessCreditUsd = 0,
 ): SymbolAggregate {
   const w = weightedAvgBuy(lots)
   const currentPrice = lots[0]?.currentPrice ?? w.avgAdjusted
   const target = targetSellPrice(w.avgAdjusted, profitPct)
   const lotsAtTarget = lots.filter((l) => l.targetState === 'reached').length
+  const { price: breakevenSellPrice, coversOpen: excessCoversOpen } = breakevenSellPriceWithExcess(
+    w.totalCostUsd,
+    w.totalContracts,
+    excessCreditUsd,
+  )
 
   return {
     totalCostUsd: w.totalCostUsd,
@@ -73,10 +80,16 @@ export function buildSymbolAggregate(
     targetState: lotTargetState(currentPrice, target),
     lotsAtTarget,
     lotsPending: lots.length - lotsAtTarget,
+    excessCreditUsd: roundUsd(excessCreditUsd),
+    breakevenSellPrice,
+    excessCoversOpen,
   }
 }
 
-export function groupBySymbol(enriched: EnrichedLot[]): SymbolPositionGroup[] {
+export function groupBySymbol(
+  enriched: EnrichedLot[],
+  excessBySymbol: Map<string, number> = new Map(),
+): SymbolPositionGroup[] {
   const map = new Map<string, EnrichedLot[]>()
   for (const lot of enriched) {
     const list = map.get(lot.symbol) ?? []
@@ -89,16 +102,36 @@ export function groupBySymbol(enriched: EnrichedLot[]): SymbolPositionGroup[] {
       const currentPrice = sorted[0]?.currentPrice ?? 0
       const totalRemainingQty = sorted.reduce((s, l) => s + l.remainingQty, 0)
       const totalInvestedUsd = roundUsd(sorted.reduce((s, l) => s + l.investedUsd, 0))
+      const excessCreditUsd = excessBySymbol.get(symbol) ?? 0
       return {
         symbol,
         currentPrice,
         totalRemainingQty,
         totalInvestedUsd,
-        aggregate: buildSymbolAggregate(sorted),
+        aggregate: buildSymbolAggregate(sorted, DEFAULT_TARGET_PROFIT_PCT, excessCreditUsd),
         lots: sorted,
       }
     })
     .sort((a, b) => a.symbol.localeCompare(b.symbol))
+}
+
+/** Aplica crédito de excedente desde cierres al agrupar posiciones abiertas. */
+export function groupOpenPositions(
+  lots: TradeLot[],
+  pricesBySymbol: Record<string, number>,
+  closedTrades: ClosedTrade[] = [],
+): SymbolPositionGroup[] {
+  const openLots = lots.filter((l) => l.status !== 'closed' && l.remainingQty > 0)
+  const openLotsBySymbol = new Map<string, TradeLot[]>()
+  for (const lot of openLots) {
+    const list = openLotsBySymbol.get(lot.symbol) ?? []
+    list.push(lot)
+    openLotsBySymbol.set(lot.symbol, list)
+  }
+
+  const enriched = enrichLots(lots, pricesBySymbol)
+  const excessBySymbol = excessCreditBySymbol(closedTrades, openLotsBySymbol)
+  return groupBySymbol(enriched, excessBySymbol)
 }
 
 function roundUsd(n: number): number {

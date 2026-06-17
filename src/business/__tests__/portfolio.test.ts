@@ -47,5 +47,7 @@ describe('buildSymbolAggregate', () => {
     expect(agg.avgBuyPrice).toBe(150.01) // +0.01
     expect(agg.targetSellPrice).toBe(152.26) // 150.01 * 1.015
     expect(agg.currentProfitPct).toBeCloseTo(-32.01, 1)
+    expect(agg.excessCreditUsd).toBe(0)
+    expect(agg.excessCoversOpen).toBe(false)
   })
 })
