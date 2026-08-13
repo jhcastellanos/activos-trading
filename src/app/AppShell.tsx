@@ -7,6 +7,7 @@ import { useTargetPriceAlertWatcher } from '../hooks/useTargetPriceAlertWatcher'
 
 const nav = [
   { to: '/', label: 'Inicio', icon: 'home' as const },
+  { to: '/ratio', label: 'Ratio', icon: 'calculator' as const },
   { to: '/open', label: 'Abiertas', icon: 'open' as const },
   { to: '/closed', label: 'Cerrados', icon: 'closed' as const },
   { to: '/notifications', label: 'Notificaciones', icon: 'notifications' as const },

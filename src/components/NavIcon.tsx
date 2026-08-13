@@ -1,9 +1,15 @@
-type NavIconName = 'home' | 'assets' | 'open' | 'closed' | 'notifications' | 'settings'
+type NavIconName = 'home' | 'calculator' | 'assets' | 'open' | 'closed' | 'notifications' | 'settings'
 
 const paths: Record<NavIconName, JSX.Element> = {
   home: (
     <>
       <path d="M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-5v-6H10v6H5a1 1 0 0 1-1-1v-9.5Z" />
+    </>
+  ),
+  calculator: (
+    <>
+      <rect x="4" y="3" width="16" height="18" rx="2" />
+      <path d="M8 7h8M8 11h2M12 11h2M16 11h2M8 15h2M12 15h2M16 15h2" />
     </>
   ),
   assets: (
