@@ -1924,3 +1924,28 @@ select:focus {
     font-size: 2rem;
   }
 }
+
+/* Cash Secured Put Calculator */
+.csp-breakeven-card .cc-hero-value {
+  color: var(--tier-blue);
+}
+
+.csp-breakeven-copy {
+  margin: 8px 0 0;
+  font-size: 0.78rem;
+  color: var(--muted);
+  line-height: 1.45;
+  text-align: left;
+}
+
+.csp-scenario-card {
+  padding: 14px;
+}
+
+.csp-scenario-list {
+  margin: 8px 0 0;
+  padding-left: 18px;
+  font-size: 0.82rem;
+  color: var(--text);
+  line-height: 1.5;
+}
