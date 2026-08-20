@@ -1902,6 +1902,29 @@ select:focus {
   color: var(--pos);
 }
 
+.cc-target-tag.covered-tag {
+  color: var(--muted);
+}
+
+.cc-target-card.covered {
+  opacity: 0.92;
+}
+
+.cc-target-hint {
+  font-size: 0.65rem;
+  color: var(--muted);
+}
+
+.cc-targets-covered-note {
+  margin: 8px 0 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  background: color-mix(in srgb, var(--pos) 12%, var(--card));
+  color: var(--text);
+}
+
 .cc-breakdown-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;

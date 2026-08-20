@@ -5,7 +5,7 @@ export const COVERED_CALL_CONTRACT_FEE_USD = 0.70
 export const COVERED_CALL_SHARES_PER_CONTRACT = 100
 
 /** Objetivos de Daily Percent Ratio para Required Bid. */
-export const COVERED_CALL_TARGET_DAILY_PCTS = [0.3, 0.5, 1.0, 1.5] as const
+export const COVERED_CALL_TARGET_DAILY_PCTS = [0.5, 1.0, 1.5, 2.0] as const
 
 /** Target preferido visualmente. */
 export const COVERED_CALL_PREFERRED_TARGET_PCT = 1.0
@@ -29,7 +29,12 @@ export type CoveredCallInputs = {
 
 export type TargetBidRecommendation = {
   targetDailyPct: CoveredCallTargetDailyPct
+  /** Prima mínima por acción para alcanzar el target (0 si el strike ya lo cubre). */
   requiredBid: number
+  /** Profit total necesario para ese target diario. */
+  requiredTotalProfit: number
+  /** La ganancia al strike ya alcanza o supera el objetivo — no hace falta prima. */
+  coveredByCapitalGain: boolean
   isPreferred: boolean
   isClosestToCurrentBid: boolean
 }
@@ -45,6 +50,8 @@ export type CoveredCallCalculation = {
   netPremium: number
   capitalGain: number
   totalCoveredCallProfit: number
+  /** Rendimiento total del trade sobre capital (sin dividir por días). */
+  totalReturnPct: number
   dailyPercentRatio: number
   dailyReturnLabel: DailyReturnLabel
   targetBids: TargetBidRecommendation[]
@@ -144,15 +151,45 @@ export function requiredBidForTargetDailyPct(
   capitalGain: number,
   contractFees: number,
   contracts: number,
-  businessDays: number,
-): number {
+  /** Mismo divisor que Daily Percent Ratio: días calendario hasta vencimiento. */
+  calendarDays: number,
+): Pick<TargetBidRecommendation, 'requiredBid' | 'requiredTotalProfit' | 'coveredByCapitalGain'> {
   const targetDecimal = targetDailyPct / 100
-  const requiredTotalProfit = totalInvested * targetDecimal * businessDays
+  const requiredTotalProfit = roundUsd(totalInvested * targetDecimal * calendarDays)
+
+  if (capitalGain >= requiredTotalProfit) {
+    return {
+      requiredBid: 0,
+      requiredTotalProfit,
+      coveredByCapitalGain: true,
+    }
+  }
+
   const requiredNetPremium = requiredTotalProfit - capitalGain
   const requiredGrossPremium = requiredNetPremium + contractFees
   const shares = contracts * COVERED_CALL_SHARES_PER_CONTRACT
-  if (shares <= 0) return 0
-  return roundBid(requiredGrossPremium / shares)
+  const requiredBid = shares > 0 ? roundBid(requiredGrossPremium / shares) : 0
+
+  return {
+    requiredBid: Math.max(0, requiredBid),
+    requiredTotalProfit,
+    coveredByCapitalGain: false,
+  }
+}
+
+/** Daily % = (profit total / capital / días calendario) × 100 */
+export function dailyPercentRatio(
+  totalCoveredCallProfit: number,
+  totalInvested: number,
+  calendarDays: number,
+): number {
+  if (totalInvested <= 0 || calendarDays <= 0) return 0
+  return roundRatio((totalCoveredCallProfit / totalInvested / calendarDays) * 100)
+}
+
+export function totalReturnPct(totalCoveredCallProfit: number, totalInvested: number): number {
+  if (totalInvested <= 0) return 0
+  return roundRatio((totalCoveredCallProfit / totalInvested) * 100)
 }
 
 export function calculateCoveredCallMetrics(
@@ -165,7 +202,6 @@ export function calculateCoveredCallMetrics(
 
   const calendarDays = input.daysToExpiration
   const businessDays = countBusinessDaysToExpiration(calendarDays, referenceDate, isHoliday)
-  if (businessDays <= 0) return null
 
   const shares = input.contracts * COVERED_CALL_SHARES_PER_CONTRACT
   const totalInvested = roundUsd(input.tradePrice * shares)
@@ -174,25 +210,25 @@ export function calculateCoveredCallMetrics(
   const netPremium = roundUsd(grossPremium - contractFees)
   const capitalGain = roundUsd((input.strikePrice - input.tradePrice) * shares)
   const totalCoveredCallProfit = roundUsd(netPremium + capitalGain)
-  const dailyPercentRatio = roundRatio(
-    (totalCoveredCallProfit / totalInvested / businessDays) * 100,
-  )
+  const totalReturn = totalReturnPct(totalCoveredCallProfit, totalInvested)
+  const dailyRatio = dailyPercentRatio(totalCoveredCallProfit, totalInvested, calendarDays)
 
   const rawTargets = COVERED_CALL_TARGET_DAILY_PCTS.map((targetDailyPct) => ({
     targetDailyPct,
-    requiredBid: requiredBidForTargetDailyPct(
+    ...requiredBidForTargetDailyPct(
       targetDailyPct,
       totalInvested,
       capitalGain,
       contractFees,
       input.contracts,
-      businessDays,
+      calendarDays,
     ),
   }))
 
+  const targetsNeedingPremium = rawTargets.filter((row) => !row.coveredByCapitalGain)
   const closestTargetPct =
-    input.bid >= 0
-      ? rawTargets.reduce((best, row) => {
+    input.bid >= 0 && targetsNeedingPremium.length > 0
+      ? targetsNeedingPremium.reduce((best, row) => {
           const bestDiff = Math.abs(best.requiredBid - input.bid)
           const rowDiff = Math.abs(row.requiredBid - input.bid)
           return rowDiff < bestDiff ? row : best
@@ -202,6 +238,8 @@ export function calculateCoveredCallMetrics(
   const targetBids: TargetBidRecommendation[] = rawTargets.map((row) => ({
     targetDailyPct: row.targetDailyPct,
     requiredBid: row.requiredBid,
+    requiredTotalProfit: row.requiredTotalProfit,
+    coveredByCapitalGain: row.coveredByCapitalGain,
     isPreferred: row.targetDailyPct === COVERED_CALL_PREFERRED_TARGET_PCT,
     isClosestToCurrentBid: closestTargetPct === row.targetDailyPct,
   }))
@@ -217,8 +255,9 @@ export function calculateCoveredCallMetrics(
     netPremium,
     capitalGain,
     totalCoveredCallProfit,
-    dailyPercentRatio,
-    dailyReturnLabel: interpretDailyReturnLabel(dailyPercentRatio),
+    totalReturnPct: totalReturn,
+    dailyPercentRatio: dailyRatio,
+    dailyReturnLabel: interpretDailyReturnLabel(dailyRatio),
     targetBids,
   }
 }

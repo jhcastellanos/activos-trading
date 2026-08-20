@@ -102,7 +102,10 @@ export function CoveredCallCalculatorPage() {
             <span className="cc-hero-label">Daily Percent Ratio</span>
             <strong className="cc-hero-value">{fmtPct(result.dailyPercentRatio)}</strong>
             <span className="cc-hero-badge">{result.dailyReturnLabel}</span>
-            <p className="cc-hero-note">Resultado matemático informativo, no asesoría financiera.</p>
+            <p className="cc-hero-note">
+              Profit total ÷ capital ÷ {result.calendarDays} días calendario · Total del trade:{' '}
+              {fmtPct(result.totalReturnPct, 2)}
+            </p>
           </div>
 
           <div className="card cc-highlight-card">
@@ -116,18 +119,32 @@ export function CoveredCallCalculatorPage() {
           <div className="card cc-targets-card">
             <h3 className="settings-heading">Target Bid Recommendations</h3>
             <p className="subtitle cc-targets-note">
-              Required Bid — prima por acción necesaria para alcanzar cada objetivo diario. No
-              implica que exista ese bid en el mercado.
+              Required Bid = ((Capital × Target% × Días) − Capital Gain + Fees) ÷ (Contratos ×
+              100). Mismo divisor de días que el Daily Percent Ratio ({result.calendarDays}{' '}
+              calendario).
             </p>
+            {result.targetBids.every((t) => t.coveredByCapitalGain) && (
+              <p className="cc-targets-covered-note">
+                La ganancia potencial al strike ({currency(result.capitalGain)}) ya supera todos los
+                objetivos diarios. Tu prima actual es beneficio adicional.
+              </p>
+            )}
             <div className="cc-target-grid">
               {result.targetBids.map((target) => (
                 <article
                   key={target.targetDailyPct}
-                  className={`cc-target-card${target.isPreferred ? ' preferred' : ''}${target.isClosestToCurrentBid ? ' closest' : ''}`}
+                  className={`cc-target-card${target.isPreferred ? ' preferred' : ''}${target.isClosestToCurrentBid ? ' closest' : ''}${target.coveredByCapitalGain ? ' covered' : ''}`}
                 >
                   <span className="cc-target-pct">{fmtTargetPct(target.targetDailyPct)} Daily</span>
                   <span className="cc-target-bid-label">Required Bid</span>
                   <strong className="cc-target-bid">{fmtBid(target.requiredBid)}</strong>
+                  {target.coveredByCapitalGain ? (
+                    <span className="cc-target-tag covered-tag">Cubierto por capital gain</span>
+                  ) : (
+                    <span className="cc-target-hint">
+                      Profit objetivo: {currency(target.requiredTotalProfit)}
+                    </span>
+                  )}
                   {target.isPreferred && <span className="cc-target-tag">Objetivo preferido</span>}
                   {target.isClosestToCurrentBid && (
                     <span className="cc-target-tag closest-tag">Más cercano a tu Bid</span>
