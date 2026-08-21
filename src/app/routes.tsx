@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import { AppShell } from './AppShell'
 import { CashSecuredPutCalculatorPage } from '../pages/CashSecuredPutCalculatorPage'
 import { CoveredCallCalculatorPage } from '../pages/CoveredCallCalculatorPage'
+import { CoveredCallFeasibilityPage } from '../pages/CoveredCallFeasibilityPage'
 import { DashboardPage } from '../pages/DashboardPage'
 import { OpenPositionsPage } from '../pages/OpenPositionsPage'
 import { ClosedTradesPage } from '../pages/ClosedTradesPage'
@@ -16,6 +17,7 @@ export function AppRoutes() {
       <Route element={<AppShell />}>
         <Route index element={<DashboardPage />} />
         <Route path="ratio" element={<CoveredCallCalculatorPage />} />
+        <Route path="cc-fact" element={<CoveredCallFeasibilityPage />} />
         <Route path="csp" element={<CashSecuredPutCalculatorPage />} />
         <Route path="open" element={<OpenPositionsPage />} />
         <Route path="sell-plan" element={<Navigate to="/closed" replace />} />

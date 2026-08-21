@@ -1,4 +1,13 @@
-type NavIconName = 'home' | 'calculator' | 'csp' | 'assets' | 'open' | 'closed' | 'notifications' | 'settings'
+type NavIconName =
+  | 'home'
+  | 'calculator'
+  | 'feasibility'
+  | 'csp'
+  | 'assets'
+  | 'open'
+  | 'closed'
+  | 'notifications'
+  | 'settings'
 
 const paths: Record<NavIconName, JSX.Element> = {
   home: (
@@ -10,6 +19,13 @@ const paths: Record<NavIconName, JSX.Element> = {
     <>
       <rect x="4" y="3" width="16" height="18" rx="2" />
       <path d="M8 7h8M8 11h2M12 11h2M16 11h2M8 15h2M12 15h2M16 15h2" />
+    </>
+  ),
+  feasibility: (
+    <>
+      <path d="M12 3v18M3 12h18" />
+      <circle cx="7" cy="7" r="2" />
+      <circle cx="17" cy="17" r="2" />
     </>
   ),
   csp: (
