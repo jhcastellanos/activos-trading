@@ -2,10 +2,13 @@ import { describe, expect, it } from 'vitest'
 import {
   calculateCoveredCallFeasibility,
   daysToExpirationFromDate,
+  resolveDaysToExpiration,
   resolveInternalFees,
   resolveNetPremiumReceived,
   type CoveredCallFeasibilityInputs,
 } from '../coveredCallFeasibility'
+
+const TSLL_REFERENCE_DATE = new Date(2026, 5, 7)
 
 const TSLL_INPUT: CoveredCallFeasibilityInputs = {
   ticker: 'TSLL',
@@ -17,15 +20,16 @@ const TSLL_INPUT: CoveredCallFeasibilityInputs = {
   originalPremiumPerShare: 0.1,
   netPremiumReceived: null,
   currentCallPrice: 0.76,
-  daysToExpiration: 0,
-  expirationDate: null,
+  expirationDate: '2026-06-07',
   currentAssetPrice: 9.75,
 }
 
 describe('calculateCoveredCallFeasibility', () => {
   it('calculates TSLL example with internal fees and sell at current price', () => {
-    const result = calculateCoveredCallFeasibility(TSLL_INPUT)!
+    const result = calculateCoveredCallFeasibility(TSLL_INPUT, TSLL_REFERENCE_DATE)!
     expect(result.valid).toBe(true)
+    expect(result.expirationDate).toBe('2026-06-07')
+    expect(result.daysToExpiration).toBe(0)
     expect(result.coveredShares).toBe(1000)
     expect(result.netPremiumReceived).toBe(93)
     expect(result.costBasisCovered).toBe(8790)
@@ -47,11 +51,14 @@ describe('calculateCoveredCallFeasibility', () => {
   })
 
   it('uses proportional cost basis for uncovered shares', () => {
-    const result = calculateCoveredCallFeasibility({
-      ...TSLL_INPUT,
-      shareQuantity: 1500,
-      totalCostBasis: 13184.85,
-    })!
+    const result = calculateCoveredCallFeasibility(
+      {
+        ...TSLL_INPUT,
+        shareQuantity: 1500,
+        totalCostBasis: 13184.85,
+      },
+      TSLL_REFERENCE_DATE,
+    )!
     expect(result.coveredShares).toBe(1000)
     expect(result.uncoveredShares).toBe(500)
     expect(result.costBasisCovered).toBe(8789.9)
@@ -59,7 +66,7 @@ describe('calculateCoveredCallFeasibility', () => {
   })
 
   it('computes intrinsic and extrinsic value', () => {
-    const result = calculateCoveredCallFeasibility(TSLL_INPUT)!
+    const result = calculateCoveredCallFeasibility(TSLL_INPUT, TSLL_REFERENCE_DATE)!
     expect(result.intrinsicValuePerShare).toBe(0.75)
     expect(result.extrinsicValuePerShare).toBe(0.01)
     expect(result.extrinsicValueTotal).toBe(10)
@@ -67,11 +74,14 @@ describe('calculateCoveredCallFeasibility', () => {
   })
 
   it('flags insufficient coverage', () => {
-    const result = calculateCoveredCallFeasibility({
-      ...TSLL_INPUT,
-      shareQuantity: 500,
-      contracts: 10,
-    })!
+    const result = calculateCoveredCallFeasibility(
+      {
+        ...TSLL_INPUT,
+        shareQuantity: 500,
+        contracts: 10,
+      },
+      TSLL_REFERENCE_DATE,
+    )!
     expect(result.valid).toBe(false)
     expect(result.errors.some((e) => e.includes('cubren'))).toBe(true)
   })
@@ -91,5 +101,10 @@ describe('daysToExpirationFromDate', () => {
     const ref = new Date(2026, 5, 7)
     expect(daysToExpirationFromDate('2026-06-07', ref)).toBe(0)
     expect(daysToExpirationFromDate('2026-06-10', ref)).toBe(3)
+  })
+
+  it('resolveDaysToExpiration uses expiration date only', () => {
+    const ref = new Date(2026, 5, 7)
+    expect(resolveDaysToExpiration('2026-06-10', ref)).toBe(3)
   })
 })

@@ -4,6 +4,7 @@ import {
   CC_FEASIBILITY_SHARES_PER_CONTRACT,
   type CoveredCallFeasibilityInputs,
 } from '../business/coveredCallFeasibility'
+import { TickerCombobox } from '../components/TickerCombobox'
 
 const currency = (n: number) =>
   new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n)
@@ -35,9 +36,7 @@ type FormState = {
   strikePrice: string
   originalPremiumPerShare: string
   currentCallPrice: string
-  daysToExpiration: string
   expirationDate: string
-  useExpirationDate: boolean
   currentAssetPrice: string
 }
 
@@ -49,9 +48,7 @@ const defaultForm: FormState = {
   strikePrice: '',
   originalPremiumPerShare: '',
   currentCallPrice: '',
-  daysToExpiration: '',
   expirationDate: '',
-  useExpirationDate: false,
   currentAssetPrice: '',
 }
 
@@ -75,21 +72,14 @@ export function CoveredCallFeasibilityPage() {
       originalPremiumPerShare: parseRequired(values.originalPremiumPerShare),
       netPremiumReceived: null,
       currentCallPrice: parseRequired(values.currentCallPrice),
-      daysToExpiration: values.useExpirationDate
-        ? null
-        : parseRequired(values.daysToExpiration, true),
-      expirationDate: values.useExpirationDate && values.expirationDate.trim()
-        ? values.expirationDate
-        : null,
+      expirationDate: values.expirationDate.trim(),
       currentAssetPrice,
     }
   }, [values])
 
   const result = useMemo(() => calculateCoveredCallFeasibility(inputs), [inputs])
 
-  const showPartial = Object.entries(values).some(
-    ([k, v]) => k !== 'useExpirationDate' && typeof v === 'string' && v.trim() !== '',
-  )
+  const showPartial = Object.values(values).some((v) => v.trim() !== '')
 
   const contractsNum = parseInt(values.contracts, 10)
   const coveredPreview =
@@ -109,14 +99,10 @@ export function CoveredCallFeasibilityPage() {
       <div className="card cc-inputs-card">
         <h3 className="settings-heading">Información de las acciones</h3>
         <div className="cc-input-grid cc-fact-grid">
-          <label className="cc-field cc-field-full">
-            <span className="cc-field-label">Ticker</span>
-            <input
-              type="text"
-              value={values.ticker}
-              onChange={(e) => setField('ticker', e.target.value.toUpperCase())}
-            />
-          </label>
+          <TickerCombobox
+            value={values.ticker}
+            onChange={(ticker) => setField('ticker', ticker)}
+          />
           <label className="cc-field">
             <span className="cc-field-label">Cantidad de acciones</span>
             <input
@@ -191,36 +177,14 @@ export function CoveredCallFeasibilityPage() {
               onChange={(e) => setField('currentCallPrice', e.target.value)}
             />
           </label>
-          <label className="cc-field cc-fact-dte-toggle">
-            <span className="cc-field-label">Usar fecha de expiración</span>
+          <label className="cc-field">
+            <span className="cc-field-label">Fecha de expiración</span>
             <input
-              type="checkbox"
-              checked={values.useExpirationDate}
-              onChange={(e) => setField('useExpirationDate', e.target.checked)}
+              type="date"
+              value={values.expirationDate}
+              onChange={(e) => setField('expirationDate', e.target.value)}
             />
           </label>
-          {values.useExpirationDate ? (
-            <label className="cc-field">
-              <span className="cc-field-label">Fecha de expiración</span>
-              <input
-                type="date"
-                value={values.expirationDate}
-                onChange={(e) => setField('expirationDate', e.target.value)}
-              />
-            </label>
-          ) : (
-            <label className="cc-field">
-              <span className="cc-field-label">Días restantes (DTE)</span>
-              <input
-                type="number"
-                inputMode="numeric"
-                step="1"
-                min="0"
-                value={values.daysToExpiration}
-                onChange={(e) => setField('daysToExpiration', e.target.value)}
-              />
-            </label>
-          )}
         </div>
       </div>
 
@@ -306,7 +270,11 @@ export function CoveredCallFeasibilityPage() {
                 <span className="goal-metric-value">{currency(result.netPremiumReceived)}</span>
               </div>
               <div className="cc-breakdown-item">
-                <span className="goal-metric-label">DTE</span>
+                <span className="goal-metric-label">Expiración</span>
+                <span className="goal-metric-value">{result.expirationDate}</span>
+              </div>
+              <div className="cc-breakdown-item">
+                <span className="goal-metric-label">DTE (desde hoy)</span>
                 <span className="goal-metric-value">{result.daysToExpiration}</span>
               </div>
             </div>

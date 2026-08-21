@@ -24,8 +24,7 @@ export type CoveredCallFeasibilityInputs = {
   /** Prima neta total recibida al abrir (opcional). */
   netPremiumReceived: number | null
   currentCallPrice: number
-  daysToExpiration: number | null
-  expirationDate: string | null
+  expirationDate: string
   currentAssetPrice: number
   /** Si no se indica, se usa el precio actual del activo. */
   estimatedSellPrice?: number
@@ -52,6 +51,7 @@ export type CoveredCallFeasibilityResult = {
   costBasisUncovered: number
   netPremiumReceived: number
   daysToExpiration: number
+  expirationDate: string
   moneyness: CallMoneyness
   moneynessLabel: string
   distanceFromStrikeUsd: number
@@ -102,12 +102,10 @@ export function daysToExpirationFromDate(
 }
 
 export function resolveDaysToExpiration(
-  daysToExpiration: number | null,
-  expirationDate: string | null,
+  expirationDate: string,
   referenceDate = new Date(),
 ): number {
-  if (expirationDate) return daysToExpirationFromDate(expirationDate, referenceDate)
-  return Math.max(0, daysToExpiration ?? 0)
+  return daysToExpirationFromDate(expirationDate, referenceDate)
 }
 
 export function validateCoveredCallFeasibilityInputs(
@@ -149,13 +147,9 @@ export function validateCoveredCallFeasibilityInputs(
   ) {
     errors.push('Precio estimado de venta debe ser mayor que 0.')
   }
-  if (input.daysToExpiration == null && !input.expirationDate) {
-    errors.push('Indica DTE o fecha de expiración.')
-  }
-  if (input.daysToExpiration != null && (!Number.isInteger(input.daysToExpiration) || input.daysToExpiration < 0)) {
-    errors.push('DTE debe ser un entero ≥ 0.')
-  }
-  if (input.expirationDate && Number.isNaN(parseYmd(input.expirationDate).getTime())) {
+  if (!input.expirationDate?.trim()) {
+    errors.push('Fecha de expiración es obligatoria.')
+  } else if (Number.isNaN(parseYmd(input.expirationDate).getTime())) {
     errors.push('Fecha de expiración no válida.')
   }
 
@@ -277,6 +271,7 @@ export function calculateCoveredCallFeasibility(
       costBasisUncovered: 0,
       netPremiumReceived: 0,
       daysToExpiration: 0,
+      expirationDate: '',
       moneyness: 'OTM',
       moneynessLabel: '',
       distanceFromStrikeUsd: 0,
@@ -315,11 +310,7 @@ export function calculateCoveredCallFeasibility(
   const netPremiumReceived = resolveNetPremiumReceived(input)
   const fees = resolveInternalFees(input.contracts)
   const estimatedSellPrice = input.estimatedSellPrice ?? input.currentAssetPrice
-  const daysToExpiration = resolveDaysToExpiration(
-    input.daysToExpiration,
-    input.expirationDate,
-    referenceDate,
-  )
+  const daysToExpiration = resolveDaysToExpiration(input.expirationDate, referenceDate)
 
   const { moneyness, label: moneynessLabel, distanceUsd, distancePct } = callMoneyness(
     input.currentAssetPrice,
@@ -411,6 +402,7 @@ export function calculateCoveredCallFeasibility(
     costBasisUncovered,
     netPremiumReceived,
     daysToExpiration,
+    expirationDate: input.expirationDate,
     moneyness,
     moneynessLabel,
     distanceFromStrikeUsd: distanceUsd,
