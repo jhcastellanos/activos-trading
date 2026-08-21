@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useMemo, useState } from 'react'
 import {
   calculateCoveredCallFeasibility,
   CC_FEASIBILITY_SHARES_PER_CONTRACT,
@@ -21,12 +21,6 @@ const fmtSigned = (n: number) => {
   return `${sign}${currency(Math.abs(n))}`
 }
 
-function parseOptional(raw: string): number | null {
-  if (raw.trim() === '') return null
-  const n = parseFloat(raw)
-  return Number.isFinite(n) ? n : null
-}
-
 function parseRequired(raw: string, integer = false): number {
   if (raw.trim() === '') return Number.NaN
   const n = integer ? parseInt(raw, 10) : parseFloat(raw)
@@ -37,73 +31,49 @@ type FormState = {
   ticker: string
   shareQuantity: string
   avgBuyPrice: string
-  totalCostBasis: string
   contracts: string
   strikePrice: string
   originalPremiumPerShare: string
-  netPremiumReceived: string
   currentCallPrice: string
   daysToExpiration: string
   expirationDate: string
   useExpirationDate: boolean
   currentAssetPrice: string
-  estimatedSellPrice: string
-  buyToCloseFee: string
-  sellSharesFee: string
-  assignmentFee: string
 }
 
 const defaultForm: FormState = {
   ticker: '',
   shareQuantity: '',
   avgBuyPrice: '',
-  totalCostBasis: '',
   contracts: '',
   strikePrice: '',
   originalPremiumPerShare: '',
-  netPremiumReceived: '',
   currentCallPrice: '',
   daysToExpiration: '',
   expirationDate: '',
   useExpirationDate: false,
   currentAssetPrice: '',
-  estimatedSellPrice: '',
-  buyToCloseFee: '',
-  sellSharesFee: '',
-  assignmentFee: '',
 }
 
 export function CoveredCallFeasibilityPage() {
   const [values, setValues] = useState<FormState>(defaultForm)
-  const sellPriceTouched = useRef(false)
 
   const setField = <K extends keyof FormState>(key: K, value: FormState[K]) => {
     setValues((prev) => ({ ...prev, [key]: value }))
   }
 
-  useEffect(() => {
-    if (sellPriceTouched.current) return
-    if (values.currentAssetPrice.trim() !== '') {
-      setValues((prev) => ({ ...prev, estimatedSellPrice: prev.currentAssetPrice }))
-    }
-  }, [values.currentAssetPrice])
-
   const inputs = useMemo<CoveredCallFeasibilityInputs>(() => {
     const currentAssetPrice = parseRequired(values.currentAssetPrice)
-    const estimatedSellRaw = values.estimatedSellPrice.trim()
-    const estimatedSellPrice = estimatedSellRaw
-      ? parseRequired(values.estimatedSellPrice)
-      : currentAssetPrice
 
     return {
       ticker: values.ticker,
       shareQuantity: parseRequired(values.shareQuantity, true),
       avgBuyPrice: parseRequired(values.avgBuyPrice),
-      totalCostBasis: parseOptional(values.totalCostBasis),
+      totalCostBasis: null,
       contracts: parseRequired(values.contracts, true),
       strikePrice: parseRequired(values.strikePrice),
       originalPremiumPerShare: parseRequired(values.originalPremiumPerShare),
-      netPremiumReceived: parseOptional(values.netPremiumReceived),
+      netPremiumReceived: null,
       currentCallPrice: parseRequired(values.currentCallPrice),
       daysToExpiration: values.useExpirationDate
         ? null
@@ -112,10 +82,6 @@ export function CoveredCallFeasibilityPage() {
         ? values.expirationDate
         : null,
       currentAssetPrice,
-      estimatedSellPrice,
-      buyToCloseFee: parseOptional(values.buyToCloseFee) ?? 0,
-      sellSharesFee: parseOptional(values.sellSharesFee) ?? 0,
-      assignmentFee: parseOptional(values.assignmentFee) ?? 0,
     }
   }, [values])
 
@@ -131,10 +97,7 @@ export function CoveredCallFeasibilityPage() {
       ? contractsNum * CC_FEASIBILITY_SHARES_PER_CONTRACT
       : null
 
-  const hasFees =
-    (parseOptional(values.buyToCloseFee) ?? 0) > 0 ||
-    (parseOptional(values.sellSharesFee) ?? 0) > 0 ||
-    (parseOptional(values.assignmentFee) ?? 0) > 0
+  const sellPrice = inputs.currentAssetPrice
 
   return (
     <section className="cc-calculator-page cc-fact-page">
@@ -152,7 +115,6 @@ export function CoveredCallFeasibilityPage() {
               type="text"
               value={values.ticker}
               onChange={(e) => setField('ticker', e.target.value.toUpperCase())}
-              placeholder="TSLL"
             />
           </label>
           <label className="cc-field">
@@ -164,7 +126,6 @@ export function CoveredCallFeasibilityPage() {
               min="1"
               value={values.shareQuantity}
               onChange={(e) => setField('shareQuantity', e.target.value)}
-              placeholder="1000"
             />
           </label>
           <label className="cc-field">
@@ -175,18 +136,6 @@ export function CoveredCallFeasibilityPage() {
               step="0.01"
               value={values.avgBuyPrice}
               onChange={(e) => setField('avgBuyPrice', e.target.value)}
-              placeholder="8.79"
-            />
-          </label>
-          <label className="cc-field cc-field-full">
-            <span className="cc-field-label">Costo total real (opcional)</span>
-            <input
-              type="number"
-              inputMode="decimal"
-              step="0.01"
-              value={values.totalCostBasis}
-              onChange={(e) => setField('totalCostBasis', e.target.value)}
-              placeholder="8789.90"
             />
           </label>
         </div>
@@ -204,7 +153,6 @@ export function CoveredCallFeasibilityPage() {
               min="1"
               value={values.contracts}
               onChange={(e) => setField('contracts', e.target.value)}
-              placeholder="10"
             />
           </label>
           <label className="cc-field">
@@ -215,7 +163,6 @@ export function CoveredCallFeasibilityPage() {
               step="0.01"
               value={values.strikePrice}
               onChange={(e) => setField('strikePrice', e.target.value)}
-              placeholder="9.00"
             />
           </label>
           {coveredPreview != null && (
@@ -232,29 +179,16 @@ export function CoveredCallFeasibilityPage() {
               step="0.01"
               value={values.originalPremiumPerShare}
               onChange={(e) => setField('originalPremiumPerShare', e.target.value)}
-              placeholder="0.10"
             />
           </label>
           <label className="cc-field">
-            <span className="cc-field-label">Prima neta total (opcional)</span>
-            <input
-              type="number"
-              inputMode="decimal"
-              step="0.01"
-              value={values.netPremiumReceived}
-              onChange={(e) => setField('netPremiumReceived', e.target.value)}
-              placeholder="93.34"
-            />
-          </label>
-          <label className="cc-field">
-            <span className="cc-field-label">Precio actual Call (BTC)</span>
+            <span className="cc-field-label">Precio actual del Call (recompra)</span>
             <input
               type="number"
               inputMode="decimal"
               step="0.01"
               value={values.currentCallPrice}
               onChange={(e) => setField('currentCallPrice', e.target.value)}
-              placeholder="0.76"
             />
           </label>
           <label className="cc-field cc-fact-dte-toggle">
@@ -284,7 +218,6 @@ export function CoveredCallFeasibilityPage() {
                 min="0"
                 value={values.daysToExpiration}
                 onChange={(e) => setField('daysToExpiration', e.target.value)}
-                placeholder="0"
               />
             </label>
           )}
@@ -302,66 +235,12 @@ export function CoveredCallFeasibilityPage() {
               step="0.01"
               value={values.currentAssetPrice}
               onChange={(e) => setField('currentAssetPrice', e.target.value)}
-              placeholder="9.75"
-            />
-          </label>
-          <label className="cc-field">
-            <span className="cc-field-label">Precio estimado de venta</span>
-            <input
-              type="number"
-              inputMode="decimal"
-              step="0.01"
-              value={values.estimatedSellPrice}
-              onChange={(e) => {
-                sellPriceTouched.current = true
-                setField('estimatedSellPrice', e.target.value)
-              }}
-              placeholder="9.73"
             />
           </label>
         </div>
-      </div>
-
-      <div className="card cc-inputs-card">
-        <h3 className="settings-heading">Fees y comisiones (opcional)</h3>
-        <div className="cc-input-grid cc-fact-grid">
-          <label className="cc-field">
-            <span className="cc-field-label">Fee Buy to Close</span>
-            <input
-              type="number"
-              inputMode="decimal"
-              step="0.01"
-              min="0"
-              value={values.buyToCloseFee}
-              onChange={(e) => setField('buyToCloseFee', e.target.value)}
-              placeholder="0.00"
-            />
-          </label>
-          <label className="cc-field">
-            <span className="cc-field-label">Fee venta acciones</span>
-            <input
-              type="number"
-              inputMode="decimal"
-              step="0.01"
-              min="0"
-              value={values.sellSharesFee}
-              onChange={(e) => setField('sellSharesFee', e.target.value)}
-              placeholder="0.00"
-            />
-          </label>
-          <label className="cc-field">
-            <span className="cc-field-label">Fee asignación</span>
-            <input
-              type="number"
-              inputMode="decimal"
-              step="0.01"
-              min="0"
-              value={values.assignmentFee}
-              onChange={(e) => setField('assignmentFee', e.target.value)}
-              placeholder="0.00"
-            />
-          </label>
-        </div>
+        <p className="cc-fact-hint">
+          La venta de acciones en el escenario de recompra usa el mismo precio actual del activo.
+        </p>
       </div>
 
       {showPartial && result && !result.valid && (
@@ -386,7 +265,7 @@ export function CoveredCallFeasibilityPage() {
               </div>
               <span className="cc-fact-vs">vs.</span>
               <div className={`cc-fact-option${result.betterAlternative === 'btc_sell' ? ' winner' : ''}`}>
-                <span className="cc-fact-option-label">BTC + vender</span>
+                <span className="cc-fact-option-label">Recomprar Call + vender</span>
                 <strong className={result.scenarioBtcSell.totalPnlNet >= 0 ? 'pos' : 'neg'}>
                   {fmtSigned(result.scenarioBtcSell.totalPnlNet)}
                 </strong>
@@ -468,7 +347,7 @@ export function CoveredCallFeasibilityPage() {
                 <span className="goal-metric-value">{fmtPrice(inputs.currentCallPrice)}</span>
               </div>
               <div className="cc-breakdown-item">
-                <span className="goal-metric-label">P&L Call (BTC ahora)</span>
+                <span className="goal-metric-label">P&L Call (recompra ahora)</span>
                 <span
                   className={`goal-metric-value ${result.scenarioBtcSell.callPnl >= 0 ? 'pos' : 'neg'}`}
                 >
@@ -518,14 +397,7 @@ export function CoveredCallFeasibilityPage() {
                 </p>
                 <p>
                   P&L total = P&L acciones + prima neta ={' '}
-                  <strong>{fmtSigned(result.scenarioAssignment.totalPnlGross)}</strong>
-                  {hasFees && (
-                    <>
-                      {' '}
-                      · Neto después fees:{' '}
-                      <strong>{fmtSigned(result.scenarioAssignment.totalPnlNet)}</strong>
-                    </>
-                  )}
+                  <strong>{fmtSigned(result.scenarioAssignment.totalPnlNet)}</strong>
                 </p>
               </div>
               <p className="cc-fact-scenario-result">
@@ -538,12 +410,12 @@ export function CoveredCallFeasibilityPage() {
 
             <article className="cc-fact-scenario">
               <h4 className="cc-fact-scenario-title">
-                Escenario B — Buy to Close + vender acciones
+                Escenario B — Recomprar Call + vender acciones
               </h4>
               <div className="cc-fact-calc-lines">
                 <p>
-                  Costo BTC = {fmtPrice(inputs.currentCallPrice)} × 100 × {inputs.contracts} ={' '}
-                  <strong>{currency(result.scenarioBtcSell.buyToCloseCost)}</strong>
+                  Costo recompra = {fmtPrice(inputs.currentCallPrice)} × 100 × {inputs.contracts} +
+                  comisión = <strong>{currency(result.scenarioBtcSell.buyToCloseCost)}</strong>
                 </p>
                 <p>
                   P&L Covered Call = {currency(result.netPremiumReceived)} −{' '}
@@ -551,28 +423,17 @@ export function CoveredCallFeasibilityPage() {
                   <strong>{fmtSigned(result.scenarioBtcSell.callPnl)}</strong>
                 </p>
                 <p>
-                  Ingreso venta = {fmtPrice(inputs.estimatedSellPrice)} ×{' '}
-                  {result.coveredShares.toLocaleString()} ={' '}
+                  Ingreso venta = {fmtPrice(sellPrice)} × {result.coveredShares.toLocaleString()} ={' '}
                   <strong>{currency(result.scenarioBtcSell.stockSaleProceeds)}</strong>
                 </p>
                 <p>
                   P&L acciones = {currency(result.scenarioBtcSell.stockSaleProceeds)} −{' '}
-                  {currency(result.costBasisCovered)}
-                  {(parseOptional(values.sellSharesFee) ?? 0) > 0 &&
-                    ` − ${currency(parseOptional(values.sellSharesFee)!)}`}
-                  {' = '}
+                  {currency(result.costBasisCovered)} ={' '}
                   <strong>{fmtSigned(result.scenarioBtcSell.stockPnl)}</strong>
                 </p>
                 <p>
                   P&L total ={' '}
-                  <strong>{fmtSigned(result.scenarioBtcSell.totalPnlGross)}</strong>
-                  {hasFees && (
-                    <>
-                      {' '}
-                      · Neto:{' '}
-                      <strong>{fmtSigned(result.scenarioBtcSell.totalPnlNet)}</strong>
-                    </>
-                  )}
+                  <strong>{fmtSigned(result.scenarioBtcSell.totalPnlNet)}</strong>
                 </p>
               </div>
               <p className="cc-fact-scenario-result">
@@ -587,26 +448,24 @@ export function CoveredCallFeasibilityPage() {
           <div className="card cc-fact-block cc-fact-breakeven">
             <h3 className="settings-heading">Punto de equilibrio de la decisión</h3>
             <p className="cc-fact-breakeven-main">
-              Precio mínimo aproximado para justificar BTC + venta:{' '}
+              Precio mínimo aproximado para justificar recomprar Call + venta:{' '}
               <strong>{fmtPrice(result.breakevenSellPriceQuick)}</strong>
               <span className="cc-fact-breakeven-note">
                 (Strike + precio Call = {fmtPrice(inputs.strikePrice)} +{' '}
                 {fmtPrice(inputs.currentCallPrice)})
               </span>
             </p>
-            {hasFees && (
-              <p className="cc-fact-hint">
-                Precio exacto con fees: <strong>{fmtPrice(result.breakevenSellPrice)}</strong>
-              </p>
-            )}
+            <p className="cc-fact-hint">
+              Precio exacto con comisiones: <strong>{fmtPrice(result.breakevenSellPrice)}</strong>
+            </p>
             <div className="cc-breakdown-grid">
               <div className="cc-breakdown-item">
                 <span className="goal-metric-label">Precio necesario</span>
                 <span className="goal-metric-value">{fmtPrice(result.breakevenSellPrice)}</span>
               </div>
               <div className="cc-breakdown-item">
-                <span className="goal-metric-label">Precio estimado venta</span>
-                <span className="goal-metric-value">{fmtPrice(inputs.estimatedSellPrice)}</span>
+                <span className="goal-metric-label">Precio actual activo</span>
+                <span className="goal-metric-value">{fmtPrice(sellPrice)}</span>
               </div>
               <div className="cc-breakdown-item">
                 <span className="goal-metric-label">Diferencia / share</span>
@@ -644,7 +503,7 @@ export function CoveredCallFeasibilityPage() {
               <div
                 className={`cc-fact-final-option${result.betterAlternative === 'btc_sell' ? ' winner' : ''}`}
               >
-                <span className="cc-fact-final-label">Buy to Close + vender</span>
+                <span className="cc-fact-final-label">Recomprar Call + vender</span>
                 <strong className={result.scenarioBtcSell.totalPnlNet >= 0 ? 'pos' : 'neg'}>
                   {fmtSigned(result.scenarioBtcSell.totalPnlNet)}
                 </strong>

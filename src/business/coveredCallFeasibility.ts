@@ -1,4 +1,7 @@
-import { COVERED_CALL_SHARES_PER_CONTRACT } from './coveredCallCalculator'
+import {
+  COVERED_CALL_CONTRACT_FEE_USD,
+  COVERED_CALL_SHARES_PER_CONTRACT,
+} from './coveredCallCalculator'
 
 export const CC_FEASIBILITY_SHARES_PER_CONTRACT = COVERED_CALL_SHARES_PER_CONTRACT
 
@@ -24,10 +27,8 @@ export type CoveredCallFeasibilityInputs = {
   daysToExpiration: number | null
   expirationDate: string | null
   currentAssetPrice: number
-  estimatedSellPrice: number
-  buyToCloseFee: number
-  sellSharesFee: number
-  assignmentFee: number
+  /** Si no se indica, se usa el precio actual del activo. */
+  estimatedSellPrice?: number
 }
 
 export type ScenarioResult = {
@@ -142,7 +143,10 @@ export function validateCoveredCallFeasibilityInputs(
   if (!Number.isFinite(input.currentAssetPrice) || input.currentAssetPrice <= 0) {
     errors.push('Precio actual del activo debe ser mayor que 0.')
   }
-  if (!Number.isFinite(input.estimatedSellPrice) || input.estimatedSellPrice <= 0) {
+  if (
+    input.estimatedSellPrice != null &&
+    (!Number.isFinite(input.estimatedSellPrice) || input.estimatedSellPrice <= 0)
+  ) {
     errors.push('Precio estimado de venta debe ser mayor que 0.')
   }
   if (input.daysToExpiration == null && !input.expirationDate) {
@@ -178,11 +182,23 @@ export function costBasisForShares(
   return roundUsd(avgBuyPrice * shares)
 }
 
+export function resolveInternalFees(contracts: number) {
+  const optionContractFee = roundUsd(contracts * COVERED_CALL_CONTRACT_FEE_USD)
+  return {
+    openCallFee: optionContractFee,
+    buyToCloseFee: optionContractFee,
+    sellSharesFee: 0,
+    assignmentFee: 0,
+  }
+}
+
 export function resolveNetPremiumReceived(input: CoveredCallFeasibilityInputs): number {
   if (input.netPremiumReceived != null) return roundUsd(input.netPremiumReceived)
-  return roundUsd(
+  const grossPremium = roundUsd(
     input.originalPremiumPerShare * CC_FEASIBILITY_SHARES_PER_CONTRACT * input.contracts,
   )
+  const { openCallFee } = resolveInternalFees(input.contracts)
+  return roundUsd(grossPremium - openCallFee)
 }
 
 export function callMoneyness(
@@ -297,6 +313,8 @@ export function calculateCoveredCallFeasibility(
     input.totalCostBasis,
   )
   const netPremiumReceived = resolveNetPremiumReceived(input)
+  const fees = resolveInternalFees(input.contracts)
+  const estimatedSellPrice = input.estimatedSellPrice ?? input.currentAssetPrice
   const daysToExpiration = resolveDaysToExpiration(
     input.daysToExpiration,
     input.expirationDate,
@@ -320,15 +338,15 @@ export function calculateCoveredCallFeasibility(
   const assignmentProceeds = roundUsd(input.strikePrice * coveredShares)
   const stockPnlAssignment = roundUsd(assignmentProceeds - costBasisCovered)
   const scenarioAssignmentGross = roundUsd(stockPnlAssignment + netPremiumReceived)
-  const scenarioAssignmentNet = roundUsd(scenarioAssignmentGross - input.assignmentFee)
+  const scenarioAssignmentNet = roundUsd(scenarioAssignmentGross - fees.assignmentFee)
 
   const buyToCloseCost = roundUsd(
     input.currentCallPrice * CC_FEASIBILITY_SHARES_PER_CONTRACT * input.contracts +
-      input.buyToCloseFee,
+      fees.buyToCloseFee,
   )
   const callPnlBtc = roundUsd(netPremiumReceived - buyToCloseCost)
-  const stockSaleProceeds = roundUsd(input.estimatedSellPrice * coveredShares)
-  const stockPnlBtc = roundUsd(stockSaleProceeds - costBasisCovered - input.sellSharesFee)
+  const stockSaleProceeds = roundUsd(estimatedSellPrice * coveredShares)
+  const stockPnlBtc = roundUsd(stockSaleProceeds - costBasisCovered - fees.sellSharesFee)
   const scenarioBtcGross = roundUsd(stockPnlBtc + callPnlBtc)
   const scenarioBtcNet = scenarioBtcGross
 
@@ -367,7 +385,7 @@ export function calculateCoveredCallFeasibility(
   } else if (compareB > compareA + 0.005) {
     betterAlternative = 'btc_sell'
     betterAlternativeLabel = 'Recomprar Call + vender acciones'
-    differenceFavorsLabel = `+$${differenceUsd.toFixed(2)} a favor de Buy to Close + venta`
+    differenceFavorsLabel = `+$${differenceUsd.toFixed(2)} a favor de recomprar Call + venta`
   }
 
   const breakevenSellPriceQuick = roundPrice(input.strikePrice + input.currentCallPrice)
@@ -375,11 +393,11 @@ export function calculateCoveredCallFeasibility(
     input.strikePrice,
     input.currentCallPrice,
     coveredShares,
-    input.buyToCloseFee,
-    input.sellSharesFee,
-    input.assignmentFee,
+    fees.buyToCloseFee,
+    fees.sellSharesFee,
+    fees.assignmentFee,
   )
-  const sellPriceGapPerShare = roundPrice(input.estimatedSellPrice - breakevenSellPrice)
+  const sellPriceGapPerShare = roundPrice(estimatedSellPrice - breakevenSellPrice)
   const sellPriceGapTotal = roundUsd(sellPriceGapPerShare * coveredShares)
 
   return {

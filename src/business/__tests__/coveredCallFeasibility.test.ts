@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest'
 import {
   calculateCoveredCallFeasibility,
   daysToExpirationFromDate,
+  resolveInternalFees,
+  resolveNetPremiumReceived,
   type CoveredCallFeasibilityInputs,
 } from '../coveredCallFeasibility'
 
@@ -9,46 +11,39 @@ const TSLL_INPUT: CoveredCallFeasibilityInputs = {
   ticker: 'TSLL',
   shareQuantity: 1000,
   avgBuyPrice: 8.79,
-  totalCostBasis: 8789.9,
+  totalCostBasis: null,
   contracts: 10,
   strikePrice: 9,
   originalPremiumPerShare: 0.1,
-  netPremiumReceived: 93.34,
+  netPremiumReceived: null,
   currentCallPrice: 0.76,
   daysToExpiration: 0,
   expirationDate: null,
   currentAssetPrice: 9.75,
-  estimatedSellPrice: 9.73,
-  buyToCloseFee: 0,
-  sellSharesFee: 0,
-  assignmentFee: 0,
 }
 
 describe('calculateCoveredCallFeasibility', () => {
-  it('calculates TSLL example — assignment vs BTC + sell', () => {
+  it('calculates TSLL example with internal fees and sell at current price', () => {
     const result = calculateCoveredCallFeasibility(TSLL_INPUT)!
     expect(result.valid).toBe(true)
     expect(result.coveredShares).toBe(1000)
-    expect(result.netPremiumReceived).toBe(93.34)
-    expect(result.scenarioAssignment.stockPnl).toBe(210.1)
-    expect(result.scenarioAssignment.totalPnlNet).toBe(303.44)
-    expect(result.scenarioBtcSell.buyToCloseCost).toBe(760)
-    expect(result.scenarioBtcSell.callPnl).toBe(-666.66)
-    expect(result.scenarioBtcSell.stockPnl).toBe(940.1)
-    expect(result.scenarioBtcSell.totalPnlNet).toBe(273.44)
+    expect(result.netPremiumReceived).toBe(93)
+    expect(result.costBasisCovered).toBe(8790)
+    expect(result.scenarioAssignment.stockPnl).toBe(210)
+    expect(result.scenarioAssignment.totalPnlNet).toBe(303)
+    expect(result.scenarioBtcSell.buyToCloseCost).toBe(767)
+    expect(result.scenarioBtcSell.callPnl).toBe(-674)
+    expect(result.scenarioBtcSell.stockPnl).toBe(960)
+    expect(result.scenarioBtcSell.totalPnlNet).toBe(286)
     expect(result.betterAlternative).toBe('assignment')
-    expect(result.differenceUsd).toBe(30)
+    expect(result.differenceUsd).toBe(17)
     expect(result.breakevenSellPriceQuick).toBe(9.76)
-    expect(result.sellPriceGapPerShare).toBe(-0.03)
-    expect(result.sellPriceGapTotal).toBe(-30)
+    expect(result.sellPriceGapPerShare).toBe(-0.02)
+    expect(result.sellPriceGapTotal).toBe(-20)
   })
 
-  it('derives net premium from original when net not provided', () => {
-    const result = calculateCoveredCallFeasibility({
-      ...TSLL_INPUT,
-      netPremiumReceived: null,
-    })!
-    expect(result.netPremiumReceived).toBe(100)
+  it('derives net premium from original minus open contract fees', () => {
+    expect(resolveNetPremiumReceived(TSLL_INPUT)).toBe(93)
   })
 
   it('uses proportional cost basis for uncovered shares', () => {
@@ -81,15 +76,13 @@ describe('calculateCoveredCallFeasibility', () => {
     expect(result.errors.some((e) => e.includes('cubren'))).toBe(true)
   })
 
-  it('incorporates fees into net results', () => {
-    const result = calculateCoveredCallFeasibility({
-      ...TSLL_INPUT,
-      buyToCloseFee: 5,
-      sellSharesFee: 3,
-      assignmentFee: 2,
-    })!
-    expect(result.scenarioAssignment.totalPnlNet).toBe(301.44)
-    expect(result.scenarioBtcSell.totalPnlNet).toBe(265.44)
+  it('applies internal option contract fees on open and close', () => {
+    expect(resolveInternalFees(10)).toEqual({
+      openCallFee: 7,
+      buyToCloseFee: 7,
+      sellSharesFee: 0,
+      assignmentFee: 0,
+    })
   })
 })
 
