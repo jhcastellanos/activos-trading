@@ -4,9 +4,9 @@ export const MULTI_ACCOUNT_OPERABLE_FRACTION = 1 / 3
 export type AccountSlot = 1 | 2 | 3
 
 export const MULTI_ACCOUNT_LABELS: Record<AccountSlot, string> = {
-  1: 'Cuenta 1',
-  2: 'Cuenta 2',
-  3: 'Cuenta 3',
+  1: 'Cuenta Pedrito',
+  2: 'Cuenta Pedro',
+  3: 'Cuenta Beatriz',
 }
 
 export type DailyCloseRecord = {
