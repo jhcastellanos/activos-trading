@@ -10,6 +10,7 @@ import { ScalpingAssetsPage } from '../pages/ScalpingAssetsPage'
 import { NotificationsPage } from '../pages/NotificationsPage'
 import { SettingsPage } from '../pages/SettingsPage'
 import { PlaceholderPage } from '../pages/PlaceholderPage'
+import { MultiAccountLedgerPage } from '../pages/MultiAccountLedgerPage'
 
 export function AppRoutes() {
   return (
@@ -23,6 +24,7 @@ export function AppRoutes() {
         <Route path="sell-plan" element={<Navigate to="/closed" replace />} />
         <Route path="closed" element={<ClosedTradesPage />} />
         <Route path="assets" element={<ScalpingAssetsPage />} />
+        <Route path="cuentas" element={<MultiAccountLedgerPage />} />
         <Route path="notifications" element={<NotificationsPage />} />
         <Route path="connect" element={<Navigate to="/settings" replace />} />
         <Route path="settings" element={<SettingsPage />} />

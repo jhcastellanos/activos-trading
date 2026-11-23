@@ -2,6 +2,7 @@ import 'dotenv/config'
 import express from 'express'
 import { authRouter } from './routes/auth'
 import { schwabRouter } from './routes/schwab'
+import { tradingAccountsRouter } from './routes/tradingAccounts'
 
 const app = express()
 
@@ -15,6 +16,7 @@ app.get('/health', (_req, res) => {
 
 app.use('/api/auth', authRouter)
 app.use('/api/schwab', schwabRouter)
+app.use('/api/trading-accounts', tradingAccountsRouter)
 
 const port = Number(process.env.PORT) || 8080
 app.listen(port, () => {
